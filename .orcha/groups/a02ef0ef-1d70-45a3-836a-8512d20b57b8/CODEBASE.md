@@ -2,25 +2,30 @@
 
 ## About This Project
 
-This is a simple test project that demonstrates file creation and verification workflows. The primary task involves creating a markdown file (`sentence.md`) with specific content to test basic file I/O operations and validate that content integrity is maintained across development and QA stages.
+This is a test repository for validating multi-agent workflow orchestration. The project demonstrates coordinated file creation and QA verification workflows using the Orcha DAG system. It serves as a proof-of-concept for agent collaboration where Backend Dev creates deliverables and Backend QA validates them against exact specifications.
 
 ## Tech Stack
 
-- **File Format**: Markdown (.md)
-- **Version Control**: Git with GitHub integration
-- **Workflow**: Orcha DAG-based task coordination between Backend Dev and Backend QA agents
-- **Testing**: Manual content verification using file inspection tools (od, cat)
+- **File Format**: Markdown (.md) for content and documentation
+- **Version Control**: Git with worktrees for isolated branch work
+- **Orchestration**: Orcha DAG-based task coordination system
+  - `.orcha/` directory stores progress tracking files
+  - PROGRESS.md contains agent checklists with append-only update logs
+  - Agents operate independently and communicate via structured markdown
+- **QA Tools**: File inspection for content verification
 
 ## What This Branch Does
 
-This branch implements a straightforward file creation task:
-- Creates `sentence.md` in the project root directory
-- Contains the exact sentence: 'everything I am testing the app'
-- Backend Dev creates the file, Backend QA verifies correctness
-- Validates no extra whitespace, trailing newlines, or character corruption
+This branch implements a file creation and verification task:
+- Backend Dev created `sentence.md` with exact content: "everything I am testing the app"
+- Backend QA verified: file existence at project root, exact content match, no extra whitespace
+- Both agents completed their checklists successfully
+- Validates the end-to-end agent workflow pipeline for basic file operations
 
 ## Key Files
 
-- **`sentence.md`** - The primary deliverable; contains the test sentence (31 characters, no trailing newline)
-- **`.orcha/groups/a02ef0ef-1d70-45a3-836a-8512d20b57b8/PROGRESS.md`** - DAG progress tracking with agent checklists
-- **`.orcha/groups/a02ef0ef-1d70-45a3-836a-8512d20b57b8/CODEBASE.md`** - This documentation file
+- **`sentence.md`** - Primary deliverable containing the test sentence (31 bytes)
+- **`.orcha/groups/.../PROGRESS.md`** - DAG progress with agent checklists and status updates
+- **`.orcha/groups/.../CODEBASE.md`** - This codebase documentation
+- **`README.md`** - Project readme
+- **`requirements.md`** / **`issues.md`** - Project documentation
