@@ -2,27 +2,28 @@
 
 ## About This Project
 
-AskTrim Backend Services - a subscription tracking backend providing JWT-based authentication, profile management, and account lifecycle features. The service supports secure login with 2FA (TOTP/SMS), profile CRUD with email verification, and account deletion with 7-day grace period.
+AskTrim Backend Services - subscription tracking backend with JWT-based authentication, profile management, and account lifecycle. Supports secure login with 2FA (TOTP/SMS), profile CRUD with email verification, and soft/hard delete with 7-day grace period.
 
 ## Tech Stack
 
-- **Runtime**: Node.js with TypeScript
-- **Framework**: Express 5.x for REST API
-- **Authentication**: jsonwebtoken (JWT), bcryptjs (password hashing), speakeasy (TOTP 2FA)
-- **Testing**: Jest with supertest for integration tests (94% coverage)
-- **Architecture**: Clean architecture - domain entities, application services, infrastructure providers, API routes
+- **Runtime**: Node.js + TypeScript
+- **Framework**: Express 5.x REST API
+- **Auth**: jsonwebtoken, bcryptjs, speakeasy (TOTP)
+- **Testing**: Jest + supertest (94.11% coverage, 160 tests)
+- **Architecture**: Clean architecture - domain/application/infrastructure layers
 
 ## What This Branch Does
 
-Implements BE-002 (Authentication) and BE-003 (Profile Management) services:
-- **Auth**: Login, logout, refresh tokens, password change/reset with 2FA enforcement
-- **Profile**: GET/PATCH user profile, email change verification, account deletion with 7-day grace period, undelete capability, Plaid connection revocation, hard delete after grace period
+Implements BE-002 (Auth) and BE-003 (Profile):
+- **Auth**: Login, logout, refresh, password change/reset, 2FA enforcement
+- **Profile**: GET/PATCH profile, email verification, DELETE with 7-day grace, undelete, Plaid revocation, scheduled hard delete
 
 ## Key Files
 
-- **`src/api/routes/profile.ts`** - Profile CRUD endpoint handlers
-- **`src/application/services/ProfileService.ts`** - Profile business logic, deletion lifecycle
-- **`src/infrastructure/providers/PlaidProvider.ts`** - Financial connection management
-- **`src/infrastructure/providers/EmailProvider.ts`** - Email verification and notifications
-- **`docs/openapi/profile.yaml`** - Profile API documentation
-- **`docs/test-report-be-003.md`** - QA test report with sign-off
+- `src/api/routes/profile.ts` - Profile endpoint handlers
+- `src/application/services/ProfileService.ts` - Profile/deletion logic
+- `src/infrastructure/providers/PlaidProvider.ts` - Financial connections
+- `src/infrastructure/providers/EmailProvider.ts` - Email notifications
+- `src/infrastructure/repositories/UserRepository.ts` - User persistence, soft/hard delete
+- `docs/openapi/profile.yaml` - OpenAPI spec
+- `docs/test-report-be-003.md` - QA sign-off
