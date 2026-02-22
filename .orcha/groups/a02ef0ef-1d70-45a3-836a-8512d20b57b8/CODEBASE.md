@@ -2,30 +2,30 @@
 
 ## About This Project
 
-This is a test repository for validating multi-agent workflow orchestration. The project demonstrates coordinated file creation and QA verification workflows using the Orcha DAG system. It serves as a proof-of-concept for agent collaboration where Backend Dev creates deliverables and Backend QA validates them against exact specifications.
+AskTrim Authentication Service - a JWT-based authentication backend for the AskTrim subscription tracking app. It provides secure login with 2FA support (TOTP/SMS), session management with device tracking, and complete password lifecycle management.
 
 ## Tech Stack
 
-- **File Format**: Markdown (.md) for content and documentation
-- **Version Control**: Git with worktrees for isolated branch work
-- **Orchestration**: Orcha DAG-based task coordination system
-  - `.orcha/` directory stores progress tracking files
-  - PROGRESS.md contains agent checklists with append-only update logs
-  - Agents operate independently and communicate via structured markdown
-- **QA Tools**: File inspection for content verification
+- **Runtime**: Node.js with TypeScript
+- **Framework**: Express 5.x for REST API
+- **Authentication**: jsonwebtoken (JWT), bcryptjs (password hashing), speakeasy (TOTP 2FA)
+- **Testing**: Jest with supertest for integration tests, ts-jest for TypeScript
+- **Architecture**: Clean architecture with domain entities, application services, infrastructure providers, and API routes
 
 ## What This Branch Does
 
-This branch implements file creation tasks for testing the orchestration system:
-- Created `sentence.md` with exact content: "everything I am testing the app"
-- Created `test_reconcile.txt` with timestamped content: "Reconcile test at $(date)"
-- Validates end-to-end agent workflow pipeline for basic file operations
-- Demonstrates dynamic content generation with shell command interpolation
+Implements BE-002 Authentication Service with 5 REST endpoints:
+- `POST /api/v1/auth/login` - Email/password + OAuth login with 2FA enforcement
+- `POST /api/v1/auth/logout` - Session revocation
+- `POST /api/v1/auth/refresh` - Token rotation with new session
+- `POST /api/v1/auth/password/change` - Password update (requires current password)
+- `POST /api/v1/auth/password/reset` - Email reset link generation
 
 ## Key Files
 
-- **`sentence.md`** - Test sentence file (31 bytes)
-- **`test_reconcile.txt`** - Timestamped reconciliation test file
-- **`.orcha/groups/.../PROGRESS.md`** - DAG progress with agent checklists and status updates
-- **`.orcha/groups/.../CODEBASE.md`** - This codebase documentation
-- **`README.md`** - Project readme
+- **`src/api/routes/auth.ts`** - All auth endpoint handlers
+- **`src/application/services/AuthService.ts`** - Core auth business logic
+- **`src/infrastructure/providers/TokenProvider.ts`** - JWT generation/verification
+- **`src/domain/entities/AuthSession.ts`** - Session entity with device tracking
+- **`openapi.yaml`** - Complete API documentation
+- **`TEST-REPORT-BE-002.md`** - QA test report with sign-off

@@ -1,0 +1,69 @@
+import express from 'express';
+import { loadConfig } from './config';
+import { createAuthRouter } from './api/routes/auth';
+import { AuthService } from './application/services/AuthService';
+import { InMemoryUserRepository } from './infrastructure/repositories/UserRepository';
+import { InMemorySessionRepository } from './infrastructure/repositories/SessionRepository';
+import { InMemorySecurityEventRepository } from './infrastructure/repositories/SecurityEventRepository';
+import { JWTTokenProvider } from './infrastructure/providers/TokenProvider';
+import { BcryptPasswordProvider } from './infrastructure/providers/PasswordProvider';
+import { SpeakeasyTwoFactorProvider, MockSMSProvider } from './infrastructure/providers/TwoFactorProvider';
+import { MockEmailProvider } from './infrastructure/providers/EmailProvider';
+
+export function createApp() {
+  const config = loadConfig();
+  const app = express();
+
+  // Middleware
+  app.use(express.json());
+
+  // Initialize repositories
+  const userRepository = new InMemoryUserRepository();
+  const sessionRepository = new InMemorySessionRepository();
+  const securityEventRepository = new InMemorySecurityEventRepository();
+
+  // Initialize providers
+  const tokenProvider = new JWTTokenProvider(config.accessTokenSecret, config.refreshTokenSecret);
+  const passwordProvider = new BcryptPasswordProvider();
+  const twoFactorProvider = new SpeakeasyTwoFactorProvider();
+  const smsProvider = new MockSMSProvider();
+  const emailProvider = new MockEmailProvider();
+
+  // Initialize services
+  const authService = new AuthService(
+    userRepository,
+    sessionRepository,
+    securityEventRepository,
+    tokenProvider,
+    passwordProvider,
+    twoFactorProvider,
+    smsProvider,
+    emailProvider
+  );
+
+  // Routes
+  const authRouter = createAuthRouter(authService, tokenProvider);
+  app.use('/api/v1/auth', authRouter);
+
+  // Health check
+  app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  return {
+    app,
+    repositories: { userRepository, sessionRepository, securityEventRepository },
+    providers: { tokenProvider, passwordProvider, twoFactorProvider, smsProvider, emailProvider },
+    services: { authService }
+  };
+}
+
+// Only start server if this is the main module
+if (require.main === module) {
+  const config = loadConfig();
+  const { app } = createApp();
+
+  app.listen(config.port, () => {
+    console.log(`Auth service running on port ${config.port}`);
+  });
+}
