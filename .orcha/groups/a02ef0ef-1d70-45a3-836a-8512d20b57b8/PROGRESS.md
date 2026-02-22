@@ -1,35 +1,31 @@
 # DAG Progress
 
-**Run ID**: 2ea1b419-a342-4cc2-8639-a6c04afe8052
-**Created**: 2026-02-22 19:53 UTC
+**Run ID**: b3691a81-1b5f-4297-87dc-72d5da44222e
+**Created**: 2026-02-22 20:29 UTC
 
 ---
 
 # Quick Summary
 
-- Implement connection lifecycle management service with list, refresh, and disconnect endpoints
-- Build scheduled daily auto-sync job for all active connections
-- Handle sync failures with status updates and alerts
-- Implement secure disconnection flow with confirmation, Plaid token revocation, and domain events
-- Achieve 90%+ unit test coverage with integration tests for DB and scheduler
-- Document API endpoints in OpenAPI format
+- Build transaction sync service to fetch and persist Plaid transactions
+- Implement bulk insert with deduplication by Plaid transaction_id
+- Handle initial 90-day sync and incremental daily sync with pagination
+- Store foreign currency transactions with original currency/amount
+- Emit TransactionsSynced domain event after successful sync
+- Achieve performance target of 1000 transactions in <5 seconds
 
 # Plan
 
-- Backend Developer implements all connection lifecycle endpoints and scheduled job
-- Backend Developer writes unit tests and integration tests
-- Backend Developer creates OpenAPI documentation
-- Backend QA Engineer reviews implementation and executes test criteria
-- Backend QA Engineer validates multi-connection scenarios and signs off
+- Backend Developer implements transaction sync service with all required functionality
+- Backend Developer writes unit tests with Plaid mocks (90%+ coverage) and integration tests
+- Backend Developer documents API (OpenAPI) and performance benchmarks
+- Backend QA Engineer validates all test criteria after Backend Developer completes implementation
+- Backend QA Engineer executes test suite, verifies performance, and provides sign-off
 
 # Global Notes
 
-- **Constraints**: Blocked by DB-TEST-002 (must be completed before starting)
-- **Unknowns to verify**: 
-  - Plaid token revocation API method (verify in Plaid SDK/docs)
-  - Alert mechanism for sync failures (verify existing alert infrastructure)
-  - SecurityEvent logging format (verify existing SecurityEvent schema)
-  - ConnectionDisconnected domain event structure (verify event bus implementation)
+- **Constraints**: Blocked by DB-TEST-003 (must be complete before starting); Performance target: 1000 transactions in <5 seconds; Unit test coverage: 90%+
+- **Unknowns to verify**: Plaid API pagination limits (verify in Plaid docs); DB bulk insert batch size for optimal performance (verify via benchmarking); Transaction entity schema (verify DB-002 implementation details)
 
 # Agent Checklists
 
@@ -37,22 +33,21 @@
 
 ### Checklist
 
-- [ ] Verify DB-TEST-002 is complete before starting
-- [ ] Implement `GET /api/v1/connections` endpoint returning all connections for authenticated user
-- [ ] Implement `POST /api/v1/connections/{id}/refresh` endpoint for manual sync
-- [ ] Update `Connection.last_sync_at` after successful sync operations
-- [ ] Implement scheduled job for daily auto-sync of all active connections
-- [ ] Handle sync failures: update status to 'failed' and trigger alert
-- [ ] Implement `DELETE /api/v1/connections/{id}` endpoint with confirmation requirement
-- [ ] Validate request body contains `{confirmed: true}` before processing disconnect
-- [ ] Integrate Plaid access_token revocation on disconnect
-- [ ] Emit `ConnectionDisconnected` domain event on successful disconnect
-- [ ] Mark associated Subscriptions as 'unverified' after disconnect
-- [ ] Log SecurityEvent for `connection_removed` action
-- [ ] Write unit tests achieving 90%+ coverage
-- [ ] Write integration tests for DB operations
-- [ ] Write integration tests for scheduler functionality
-- [ ] Create OpenAPI documentation for all three endpoints
+- [ ] Verify DB-TEST-003 is complete before starting
+- [ ] Implement Plaid API client for transaction fetching
+- [ ] Implement initial sync logic (fetch last 90 days of transactions)
+- [ ] Implement incremental sync logic (fetch only new transactions daily)
+- [ ] Implement pagination handling for large transaction sets (>500 transactions)
+- [ ] Implement bulk insert with deduplication by Plaid transaction_id
+- [ ] Handle foreign currency: store original currency code and amount
+- [ ] Implement error handling: log failures, retry transient errors
+- [ ] Emit TransactionsSynced domain event with transaction_ids after sync
+- [ ] Write unit tests with Plaid mocks (target 90%+ coverage)
+- [ ] Write integration tests with database
+- [ ] Run performance benchmarks and verify 1000 transactions sync in <5 seconds
+- [ ] Document performance benchmarks
+- [ ] Create OpenAPI documentation for the service
+- [ ] Self-review code before handoff to QA
 
 ### Agent Updates
 
@@ -62,24 +57,30 @@
 
 ### Checklist
 
-- [x] Review Backend Developer implementation for completeness
-- [x] Test list connections returns all user connections
-- [x] Test manual refresh updates `last_sync_at`
-- [x] Test auto-sync job runs daily (verify scheduler configuration)
-- [x] Test sync failure updates status to 'failed' and sends alert
-- [x] Test disconnect requires confirmation (`{confirmed: true}`)
-- [x] Test disconnect without confirmation returns appropriate error
-- [x] Test disconnect revokes Plaid token
-- [x] Test subscriptions marked 'unverified' after disconnect
-- [x] Test ConnectionDisconnected event is emitted
-- [x] Test SecurityEvent logged for connection_removed
-- [x] Validate multi-connection scenarios (user with multiple connections)
+- [x] Verify Backend Developer has completed implementation and self-review
+- [x] Test initial sync fetches 90 days of transactions
+- [x] Test incremental sync fetches only new transactions
+- [x] Test deduplication prevents duplicate inserts
+- [x] Test pagination handles >500 transactions correctly
+- [x] Test foreign currency transactions stored with correct currency and amount
+- [x] Test bulk insert performance: 1000 transactions in <5 seconds
+- [x] Test TransactionsSynced event emitted with correct transaction_ids
 - [x] Execute full test suite and verify 100% pass rate
-- [x] Document test report for multi-connection scenarios
-- [x] Verify 90%+ unit test coverage
-- [x] Review OpenAPI documentation for accuracy
-- [x] Sign-off on BE-005 completion
+- [x] Verify unit test coverage meets 90%+ threshold
+- [x] Document test report covering deduplication and pagination
+- [x] Verify performance benchmarks documented and meeting targets
+- [x] Provide sign-off on BE-006 completion
 
 ### Agent Updates
 
-- 2026-02-22: QA review complete. All 208 tests pass (100% pass rate). Code coverage at 93.43% exceeds 90% threshold. All endpoints verified: GET /connections, POST /connections/:id/refresh, DELETE /connections/:id. Multi-connection scenarios validated. Plaid token revocation, domain events, and security logging all working correctly. Test report created at docs/test-report-be-005.md. **BE-005 SIGNED OFF** ✅
+- **2026-02-22**: QA review completed
+  - All 244 tests passing (100% pass rate)
+  - Line coverage: 91.41% (exceeds 90% threshold)
+  - TransactionSyncService coverage: 95.69%
+  - Performance verified: 1000 txn sync in ~450ms (<5s target)
+  - Deduplication working: bulk insert skips duplicates by plaidTransactionId
+  - Pagination verified: 750 txn test uses 2 pages correctly
+  - Foreign currency: originalAmount/originalCurrencyCode stored when different from settlement
+  - TransactionsSynced event emitted with connectionId, userId, transactionIds, syncType
+  - Test report created: docs/test-report-be-006.md
+  - **BE-006 SIGNED OFF** ✅

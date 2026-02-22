@@ -1,0 +1,263 @@
+openapi: 3.0.3
+info:
+  title: Transaction Sync Service API
+  description: |
+    API for syncing and managing financial transactions from Plaid.
+    Supports initial sync (90 days), incremental sync, pagination, and foreign currency handling.
+  version: 1.0.0
+  contact:
+    name: Backend Team
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: transactions
+    description: Transaction management and sync operations
+
+paths:
+  /transactions/sync:
+    post:
+      summary: Sync transactions for a connection
+      description: |
+        Triggers transaction sync for a specified connection.
+        - Initial sync: Fetches last 90 days of transactions
+        - Incremental sync: Fetches only new transactions since last sync
+
+        Features:
+        - Handles pagination for large transaction sets (>500)
+        - Deduplicates by Plaid transaction_id
+        - Stores foreign currency with original amount/currency
+        - Retries transient errors automatically (up to 3 attempts)
+        - Emits TransactionsSynced domain event on success
+      operationId: syncTransactions
+      tags:
+        - transactions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - connectionId
+              properties:
+                connectionId:
+                  type: string
+                  format: uuid
+                  description: ID of the Plaid connection to sync
+                  example: "conn-123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Sync completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+        '400':
+          description: Sync failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transactions:
+    get:
+      summary: List user transactions
+      description: Returns paginated list of transactions for the authenticated user
+      operationId: listTransactions
+      tags:
+        - transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of transactions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+        - name: offset
+          in: query
+          description: Number of transactions to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransactionSummary'
+                  total:
+                    type: integer
+                    description: Total number of transactions for user
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transactions/{id}:
+    get:
+      summary: Get transaction by ID
+      description: Returns a single transaction by its ID
+      operationId: getTransaction
+      tags:
+        - transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Transaction ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TransactionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Transaction ID
+        merchantName:
+          type: string
+          nullable: true
+          description: Name of the merchant
+        name:
+          type: string
+          description: Transaction description
+        amount:
+          type: number
+          format: double
+          description: Transaction amount (in settlement currency)
+        currencyCode:
+          type: string
+          description: ISO 4217 currency code
+          example: "USD"
+        originalAmount:
+          type: number
+          format: double
+          nullable: true
+          description: Original amount for foreign currency transactions
+        originalCurrencyCode:
+          type: string
+          nullable: true
+          description: Original currency code for foreign currency transactions
+          example: "EUR"
+        category:
+          type: array
+          items:
+            type: string
+          description: Transaction categories from Plaid
+          example: ["Shopping", "Online"]
+        date:
+          type: string
+          format: date
+          description: Transaction date
+        pending:
+          type: boolean
+          description: Whether the transaction is pending
+
+    SyncResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        connectionId:
+          type: string
+          format: uuid
+        syncType:
+          type: string
+          enum: [initial, incremental]
+          description: Type of sync performed
+        transactionsInserted:
+          type: integer
+          description: Number of new transactions inserted
+        duplicatesSkipped:
+          type: integer
+          description: Number of duplicate transactions skipped
+        totalFetched:
+          type: integer
+          description: Total transactions fetched from Plaid
+        transactionIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: IDs of newly inserted transactions
+
+    SyncError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        syncType:
+          type: string
+          enum: [initial, incremental]
+        transactionsInserted:
+          type: integer
+        duplicatesSkipped:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
