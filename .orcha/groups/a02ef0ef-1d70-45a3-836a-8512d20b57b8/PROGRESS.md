@@ -1,32 +1,31 @@
 # DAG Progress
 
-**Run ID**: 0e8d7ec0-2f3e-496b-a7e4-b73b530995dd
-**Created**: 2026-02-22 13:16 UTC
+**Run ID**: 1d6c3be7-5f8b-453c-a28f-85511d4b04e0
+**Created**: 2026-02-22 13:29 UTC
 
 ---
 
 # Quick Summary
 
-- Implement JWT-based authentication service with login, logout, refresh, and password management endpoints
-- Add 2FA enforcement (TOTP/SMS) for users who have it enabled
-- Create AuthSession entities with device/location tracking and log SecurityEvents
-- Achieve 90%+ unit test coverage with integration tests using DB and 2FA mocks
-- Pass all test criteria including 500 concurrent login load test
-- Complete API documentation in OpenAPI format
+- Implement profile CRUD operations (GET, PATCH, DELETE) for user management
+- Handle email change verification flow with confirmation emails
+- Implement account deletion with 7-day grace period (soft delete) and undelete capability
+- Revoke Plaid Financial Institution connections on account deletion
+- Hard delete user data after grace period expiration
+- Achieve 90%+ unit test coverage with integration tests and OpenAPI documentation
 
 # Plan
 
-- Backend Developer implements all authentication endpoints and core logic (blocked by DB-TEST-001 completion)
-- Backend Developer writes unit tests targeting 90%+ coverage
-- Backend Developer creates OpenAPI documentation
-- Backend QA Engineer reviews implementation and runs full test suite
-- Backend QA Engineer executes load test (500 concurrent logins)
-- Backend QA Engineer produces test report and provides sign-off on BE-002
+- Backend Developer implements all profile endpoints and deletion logic (blocked by DB-TEST-001 completion)
+- Backend Developer creates unit tests and integration tests, updates OpenAPI documentation
+- Backend QA Engineer reviews implementation and executes full test suite
+- Backend QA Engineer verifies all acceptance criteria and test criteria are met
+- Backend QA Engineer provides sign-off on BE-003 completion
 
 # Global Notes
 
-- **Constraints**: Blocked by DB-TEST-001; JWT expiration 24h; refresh token expiration 30d; must use bcrypt for password comparison
-- **Unknowns to verify**: OAuth provider integration details (verify with requirements REQ-BE-002/003/004); SMS code delivery mechanism (verify implementation approach); device info and location extraction method (verify available libraries/services)
+- **Constraints**: Blocked by DB-TEST-001; requires 90%+ unit test coverage; 7-day grace period for deletion; must revoke Plaid connections on deletion
+- **Unknowns to verify**: DB-TEST-001 completion status; Plaid API integration details for revoking connections; email service configuration for verification/confirmation emails; cascade delete strategy for related data
 
 # Agent Checklists
 
@@ -34,22 +33,18 @@
 
 ### Checklist
 
-- [ ] Verify DB-TEST-001 is complete before starting
-- [ ] Implement `POST /api/v1/auth/login` endpoint with email/password and OAuth support
-- [ ] Implement bcrypt password verification
-- [ ] Implement 2FA check (TOTP and SMS code validation) when enabled for user
-- [ ] Implement JWT generation with 24h expiration
-- [ ] Implement refresh token generation with 30d expiration
-- [ ] Create AuthSession entity with device info and location
-- [ ] Implement SecurityEvent logging (login_success/login_failed)
-- [ ] Implement `POST /api/v1/auth/logout` endpoint to revoke session
-- [ ] Implement `POST /api/v1/auth/refresh` endpoint to renew JWT from refresh token
-- [ ] Implement `POST /api/v1/auth/password/change` requiring current password verification
-- [ ] Implement `POST /api/v1/auth/password/reset` with email reset link generation
-- [ ] Return proper 401 responses for invalid credentials
+- [ ] Verify DB-TEST-001 is complete before starting implementation
+- [ ] Implement `GET /api/v1/users/me` endpoint to fetch user profile
+- [ ] Implement `PATCH /api/v1/users/me` endpoint for updating name, phone, address, timezone, photo
+- [ ] Implement email change verification flow (send confirmation email, require verification)
+- [ ] Implement `DELETE /api/v1/users/me` endpoint initiating soft delete with 7-day grace period
+- [ ] Implement Plaid connection revocation logic on account deletion
+- [ ] Send deletion confirmation email with cancellation link
+- [ ] Implement `POST /api/v1/users/me/undelete` endpoint for canceling deletion during grace period
+- [ ] Implement scheduled job/logic for hard delete after 7-day grace period (cascade all user data)
 - [ ] Write unit tests achieving 90%+ coverage
-- [ ] Write integration tests with DB and 2FA mocks
-- [ ] Create OpenAPI documentation for all endpoints
+- [ ] Write integration tests with database
+- [ ] Update OpenAPI documentation for all endpoints
 - [ ] Self-review code before handoff to QA
 
 ### Agent Updates
@@ -60,27 +55,20 @@
 
 ### Checklist
 
-- [x] Review Backend Developer implementation for completeness against acceptance criteria
-- [x] Test email/password login success
-- [x] Test invalid password returns 401
-- [x] Test 2FA required if enabled on user account
-- [x] Test invalid TOTP code rejected
-- [x] Test JWT expiration after 24h
-- [x] Test refresh token renews JWT correctly
-- [x] Test password change requires current password
-- [x] Test password reset email sent
-- [x] Test logout revokes session
-- [x] Execute load test: 500 concurrent logins
-- [x] Verify test suite passes with 100% pass rate
-- [x] Create test report documenting token lifecycle and 2FA scenarios
-- [x] Verify 90%+ unit test coverage achieved
+- [x] Review Backend Developer implementation after handoff
+- [x] Test profile fetch returns correct data
+- [x] Test profile update succeeds for all fields (name, phone, address, timezone, photo)
+- [x] Test email change triggers verification email
+- [x] Test account deletion creates 7-day grace period (soft delete)
+- [x] Test undelete restores account within grace period
+- [x] Test hard delete after 7 days removes all user data
+- [x] Test Plaid connections are revoked on deletion
+- [x] Execute full test suite and verify 100% pass rate
+- [x] Verify 90%+ unit test coverage
 - [x] Review OpenAPI documentation for accuracy
-- [x] Provide sign-off on BE-002 completion
+- [x] Create test report documenting deletion lifecycle
+- [x] Provide sign-off on BE-003 completion
 
 ### Agent Updates
 
-- 2026-02-22: All tests passing (116/116), coverage 94.13% exceeds 90% target
-- 2026-02-22: Load test completed - 500 concurrent logins, 100% success rate
-- 2026-02-22: OpenAPI documentation reviewed and verified complete
-- 2026-02-22: Test report created at TEST-REPORT-BE-002.md
-- 2026-02-22: **BE-002 APPROVED** - All acceptance criteria met
+- 2026-02-22: QA review completed. All 160 tests pass (100% pass rate). Coverage: 94.11% statements, 92.07% branches, 100% functions. All profile CRUD operations verified. Email verification flow tested. Account deletion lifecycle confirmed with 7-day grace period, Plaid connection revocation, and hard delete functionality. OpenAPI documentation reviewed and accurate. Test report created at `docs/test-report-be-003.md`. **BE-003 SIGNED OFF.**

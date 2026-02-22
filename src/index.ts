@@ -1,7 +1,9 @@
 import express from 'express';
 import { loadConfig } from './config';
 import { createAuthRouter } from './api/routes/auth';
+import { createProfileRouter } from './api/routes/profile';
 import { AuthService } from './application/services/AuthService';
+import { ProfileService } from './application/services/ProfileService';
 import { InMemoryUserRepository } from './infrastructure/repositories/UserRepository';
 import { InMemorySessionRepository } from './infrastructure/repositories/SessionRepository';
 import { InMemorySecurityEventRepository } from './infrastructure/repositories/SecurityEventRepository';
@@ -9,6 +11,7 @@ import { JWTTokenProvider } from './infrastructure/providers/TokenProvider';
 import { BcryptPasswordProvider } from './infrastructure/providers/PasswordProvider';
 import { SpeakeasyTwoFactorProvider, MockSMSProvider } from './infrastructure/providers/TwoFactorProvider';
 import { MockEmailProvider } from './infrastructure/providers/EmailProvider';
+import { MockPlaidProvider } from './infrastructure/providers/PlaidProvider';
 
 export function createApp() {
   const config = loadConfig();
@@ -28,6 +31,7 @@ export function createApp() {
   const twoFactorProvider = new SpeakeasyTwoFactorProvider();
   const smsProvider = new MockSMSProvider();
   const emailProvider = new MockEmailProvider();
+  const plaidProvider = new MockPlaidProvider();
 
   // Initialize services
   const authService = new AuthService(
@@ -41,9 +45,18 @@ export function createApp() {
     emailProvider
   );
 
+  const profileService = new ProfileService(
+    userRepository,
+    sessionRepository,
+    emailProvider,
+    plaidProvider
+  );
+
   // Routes
   const authRouter = createAuthRouter(authService, tokenProvider);
+  const profileRouter = createProfileRouter(profileService, tokenProvider);
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/users', profileRouter);
 
   // Health check
   app.get('/health', (req, res) => {
@@ -53,8 +66,8 @@ export function createApp() {
   return {
     app,
     repositories: { userRepository, sessionRepository, securityEventRepository },
-    providers: { tokenProvider, passwordProvider, twoFactorProvider, smsProvider, emailProvider },
-    services: { authService }
+    providers: { tokenProvider, passwordProvider, twoFactorProvider, smsProvider, emailProvider, plaidProvider },
+    services: { authService, profileService }
   };
 }
 
