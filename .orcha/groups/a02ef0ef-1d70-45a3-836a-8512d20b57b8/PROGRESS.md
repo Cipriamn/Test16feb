@@ -1,31 +1,35 @@
 # DAG Progress
 
-**Run ID**: 1e300dc9-b790-4f2b-9d3a-b75fdbb6ce41
-**Created**: 2026-02-22 18:07 UTC
+**Run ID**: 2ea1b419-a342-4cc2-8639-a6c04afe8052
+**Created**: 2026-02-22 19:53 UTC
 
 ---
 
 # Quick Summary
 
-- Implement profile CRUD endpoints (GET, PATCH, DELETE, POST undelete) for user management
-- Build account deletion flow with 7-day grace period (soft delete → hard delete)
-- Integrate email verification for email changes and deletion confirmation
-- Revoke Plaid Financial Institution connections on account deletion
-- Achieve 90%+ unit test coverage with integration tests and OpenAPI documentation
+- Implement connection lifecycle management service with list, refresh, and disconnect endpoints
+- Build scheduled daily auto-sync job for all active connections
+- Handle sync failures with status updates and alerts
+- Implement secure disconnection flow with confirmation, Plaid token revocation, and domain events
+- Achieve 90%+ unit test coverage with integration tests for DB and scheduler
+- Document API endpoints in OpenAPI format
 
 # Plan
 
-1. Backend Developer implements all profile management endpoints and business logic
-2. Backend Developer writes unit tests (90%+ coverage) and integration tests
-3. Backend Developer creates OpenAPI documentation for all endpoints
-4. Backend QA Engineer reviews implementation and executes test criteria
-5. Backend QA Engineer validates deletion lifecycle and Plaid revocation
-6. Backend QA Engineer produces test report and provides sign-off
+- Backend Developer implements all connection lifecycle endpoints and scheduled job
+- Backend Developer writes unit tests and integration tests
+- Backend Developer creates OpenAPI documentation
+- Backend QA Engineer reviews implementation and executes test criteria
+- Backend QA Engineer validates multi-connection scenarios and signs off
 
 # Global Notes
 
-- **Constraints**: Blocked by DB-TEST-001 (must be completed before work begins); 7-day grace period for soft delete; email verification required for email changes
-- **Unknowns to verify**: Plaid API integration details for revoking connections; email service configuration for verification and confirmation emails; database schema for soft delete tracking (deleted_at timestamp, deletion metadata)
+- **Constraints**: Blocked by DB-TEST-002 (must be completed before starting)
+- **Unknowns to verify**: 
+  - Plaid token revocation API method (verify in Plaid SDK/docs)
+  - Alert mechanism for sync failures (verify existing alert infrastructure)
+  - SecurityEvent logging format (verify existing SecurityEvent schema)
+  - ConnectionDisconnected domain event structure (verify event bus implementation)
 
 # Agent Checklists
 
@@ -33,19 +37,22 @@
 
 ### Checklist
 
-- [ ] Implement `GET /api/v1/users/me` endpoint returning user profile data
-- [ ] Implement `PATCH /api/v1/users/me` endpoint for updating name, phone, address, timezone, photo
-- [ ] Implement email change flow with verification email trigger
-- [ ] Implement `DELETE /api/v1/users/me` endpoint initiating soft delete with 7-day grace period
-- [ ] Implement Plaid connection revocation on account deletion
-- [ ] Implement deletion confirmation email with cancellation link
-- [ ] Implement `POST /api/v1/users/me/undelete` endpoint to cancel deletion during grace period
-- [ ] Implement scheduled job/mechanism for hard delete after 7-day grace period expires
-- [ ] Implement cascade deletion of all user data on hard delete
+- [ ] Verify DB-TEST-002 is complete before starting
+- [ ] Implement `GET /api/v1/connections` endpoint returning all connections for authenticated user
+- [ ] Implement `POST /api/v1/connections/{id}/refresh` endpoint for manual sync
+- [ ] Update `Connection.last_sync_at` after successful sync operations
+- [ ] Implement scheduled job for daily auto-sync of all active connections
+- [ ] Handle sync failures: update status to 'failed' and trigger alert
+- [ ] Implement `DELETE /api/v1/connections/{id}` endpoint with confirmation requirement
+- [ ] Validate request body contains `{confirmed: true}` before processing disconnect
+- [ ] Integrate Plaid access_token revocation on disconnect
+- [ ] Emit `ConnectionDisconnected` domain event on successful disconnect
+- [ ] Mark associated Subscriptions as 'unverified' after disconnect
+- [ ] Log SecurityEvent for `connection_removed` action
 - [ ] Write unit tests achieving 90%+ coverage
-- [ ] Write integration tests with database
-- [ ] Create OpenAPI documentation for all endpoints
-- [ ] Self-review code before handoff to QA
+- [ ] Write integration tests for DB operations
+- [ ] Write integration tests for scheduler functionality
+- [ ] Create OpenAPI documentation for all three endpoints
 
 ### Agent Updates
 
@@ -56,17 +63,23 @@
 ### Checklist
 
 - [x] Review Backend Developer implementation for completeness
-- [x] Test profile fetch returns correct data
-- [x] Test profile update succeeds for all fields (name, phone, address, timezone, photo)
-- [x] Test email change triggers verification email
-- [x] Test account deletion creates 7-day grace period (soft delete)
-- [x] Test undelete restores account within grace period
-- [x] Test hard delete after 7 days removes all user data
-- [x] Test Plaid connections are revoked on deletion
-- [x] Verify test suite executes with 100% pass rate
-- [x] Produce test report documenting deletion lifecycle
-- [x] Provide sign-off on BE-003 completion
+- [x] Test list connections returns all user connections
+- [x] Test manual refresh updates `last_sync_at`
+- [x] Test auto-sync job runs daily (verify scheduler configuration)
+- [x] Test sync failure updates status to 'failed' and sends alert
+- [x] Test disconnect requires confirmation (`{confirmed: true}`)
+- [x] Test disconnect without confirmation returns appropriate error
+- [x] Test disconnect revokes Plaid token
+- [x] Test subscriptions marked 'unverified' after disconnect
+- [x] Test ConnectionDisconnected event is emitted
+- [x] Test SecurityEvent logged for connection_removed
+- [x] Validate multi-connection scenarios (user with multiple connections)
+- [x] Execute full test suite and verify 100% pass rate
+- [x] Document test report for multi-connection scenarios
+- [x] Verify 90%+ unit test coverage
+- [x] Review OpenAPI documentation for accuracy
+- [x] Sign-off on BE-005 completion
 
 ### Agent Updates
 
-- **2026-02-22 18:10 UTC**: QA review complete. All 160 tests passing with 94.11% coverage (exceeds 90% target). Verified all acceptance criteria including profile CRUD, email verification flow, 7-day deletion grace period, Plaid revocation, and undelete functionality. Test report created at `docs/test-report-be-003.md`. **BE-003 APPROVED** ✅
+- 2026-02-22: QA review complete. All 208 tests pass (100% pass rate). Code coverage at 93.43% exceeds 90% threshold. All endpoints verified: GET /connections, POST /connections/:id/refresh, DELETE /connections/:id. Multi-connection scenarios validated. Plaid token revocation, domain events, and security logging all working correctly. Test report created at docs/test-report-be-005.md. **BE-005 SIGNED OFF** ✅
