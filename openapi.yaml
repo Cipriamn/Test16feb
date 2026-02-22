@@ -1,0 +1,448 @@
+openapi: 3.0.3
+info:
+  title: AskTrim Authentication API
+  description: |
+    JWT-based authentication service with 2FA support for the AskTrim subscription tracking app.
+
+    ## Authentication Flow
+    1. Login with email/password or OAuth token
+    2. If 2FA is enabled, provide TOTP or SMS code
+    3. Receive access token (24h) and refresh token (30d)
+    4. Use access token in Authorization header for protected endpoints
+    5. Refresh tokens before expiration
+
+    ## Security
+    - Passwords are hashed using bcrypt
+    - JWTs are signed with HS256 algorithm
+    - All sessions are tracked with device info and IP
+    - Security events are logged for audit trails
+  version: 1.0.0
+  contact:
+    name: AskTrim API Support
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: MySecurePass123!
+        oauth_token:
+          type: string
+          description: OAuth token for Google/Facebook login
+        totp_code:
+          type: string
+          pattern: "^[0-9]{6}$"
+          description: 6-digit TOTP code for 2FA
+        sms_code:
+          type: string
+          pattern: "^[0-9]{6}$"
+          description: 6-digit SMS code for 2FA
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT access token (expires in 24 hours)
+        refresh_token:
+          type: string
+          description: Refresh token (expires in 30 days)
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          description: Access token TTL in seconds
+          example: 86400
+        session_id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+
+    TwoFactorRequiredResponse:
+      type: object
+      properties:
+        requires_two_factor:
+          type: boolean
+          example: true
+        two_factor_method:
+          type: string
+          enum: [totp, sms]
+          description: Method required for 2FA
+
+    LogoutRequest:
+      type: object
+      required:
+        - session_id
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Session ID to revoke
+
+    RefreshRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          description: Valid refresh token
+
+    PasswordChangeRequest:
+      type: object
+      required:
+        - current_password
+        - new_password
+      properties:
+        current_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          description: Must contain uppercase, lowercase, number, and special character
+
+    PasswordResetRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+
+    SuccessMessage:
+      type: object
+      properties:
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+
+paths:
+  /auth/login:
+    post:
+      summary: User login
+      description: |
+        Authenticate user with email/password or OAuth token.
+
+        **Flow:**
+        1. Submit credentials
+        2. If 2FA enabled, returns `requires_two_factor: true`
+        3. Resubmit with TOTP/SMS code
+        4. Receive tokens on success
+
+        **Security Events Logged:**
+        - `login_success` on successful authentication
+        - `login_failed` on invalid credentials or 2FA code
+      operationId: login
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              password_login:
+                summary: Email/Password login
+                value:
+                  email: user@example.com
+                  password: MySecurePass123!
+              oauth_login:
+                summary: OAuth login
+                value:
+                  email: user@example.com
+                  oauth_token: google_oauth_token_here
+              two_factor_login:
+                summary: Login with 2FA
+                value:
+                  email: user@example.com
+                  password: MySecurePass123!
+                  totp_code: "123456"
+      responses:
+        '200':
+          description: Login successful or 2FA required
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LoginResponse'
+                  - $ref: '#/components/schemas/TwoFactorRequiredResponse'
+              examples:
+                success:
+                  summary: Successful login
+                  value:
+                    access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    token_type: Bearer
+                    expires_in: 86400
+                    session_id: 550e8400-e29b-41d4-a716-446655440000
+                two_factor_required:
+                  summary: 2FA required
+                  value:
+                    requires_two_factor: true
+                    two_factor_method: totp
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_email:
+                  value:
+                    error: Email is required
+                missing_credentials:
+                  value:
+                    error: Password or OAuth token is required
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_credentials:
+                  value:
+                    error: Invalid credentials
+                invalid_2fa:
+                  value:
+                    error: Invalid two-factor authentication code
+
+  /auth/logout:
+    post:
+      summary: Logout user
+      description: |
+        Revokes the specified session and invalidates its tokens.
+
+        **Security Events Logged:**
+        - `logout` on successful logout
+      operationId: logout
+      tags:
+        - Authentication
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+              example:
+                message: Logged out successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_session:
+                  value:
+                    error: Session ID is required
+                invalid_session:
+                  value:
+                    error: Invalid session
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Authorization header required
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      description: |
+        Exchange a valid refresh token for new access and refresh tokens.
+
+        **Token Rotation:**
+        - Old session is revoked
+        - New session is created
+        - New token pair is issued
+      operationId: refreshTokens
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Refresh token is required
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_token:
+                  value:
+                    error: Invalid refresh token
+                expired_session:
+                  value:
+                    error: Session expired or invalid
+
+  /auth/password/change:
+    post:
+      summary: Change password
+      description: |
+        Change the authenticated user's password.
+
+        **Requirements:**
+        - Must provide correct current password
+        - New password must meet strength requirements:
+          - Minimum 8 characters
+          - Contains uppercase letter
+          - Contains lowercase letter
+          - Contains number
+          - Contains special character
+
+        **Side Effects:**
+        - All other sessions are revoked
+        - Password changed notification email sent
+
+        **Security Events Logged:**
+        - `password_changed` on success
+      operationId: changePassword
+      tags:
+        - Password Management
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+      responses:
+        '200':
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+              example:
+                message: Password changed successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_fields:
+                  value:
+                    error: Current password and new password are required
+                wrong_password:
+                  value:
+                    error: Current password is incorrect
+                weak_password:
+                  value:
+                    error: Password must be at least 8 characters
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Authorization header required
+
+  /auth/password/reset:
+    post:
+      summary: Request password reset
+      description: |
+        Send a password reset email to the specified address.
+
+        **Security Note:**
+        Always returns success to prevent email enumeration attacks.
+
+        **Security Events Logged:**
+        - `password_reset_requested` (only for existing users)
+      operationId: requestPasswordReset
+      tags:
+        - Password Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: Reset email sent (if account exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+              example:
+                message: If the email exists, a reset link has been sent
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Email is required
+
+tags:
+  - name: Authentication
+    description: Login, logout, and token management
+  - name: Password Management
+    description: Password change and reset operations
