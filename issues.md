@@ -19,34 +19,34 @@
 ## Issue Dependency Graph
 
 ```
-DB-001 (User Schema) ──┬──> BE-001 (User Registration) ──> BE-TEST-001
-                       ├──> BE-002 (Authentication) ──> BE-TEST-002
-                       └──> BE-003 (Profile Management) ──> BE-TEST-003
+DB-001 (User Schema) ──┬──> BE-001 (User Registration)
+                       ├──> BE-002 (Authentication)
+                       └──> BE-003 (Profile Management)
 
-DB-002 (Connection Schema) ──┬──> BE-004 (Plaid Integration) ──> BE-TEST-004
-                             └──> BE-005 (Connection Lifecycle) ──> BE-TEST-005
+DB-002 (Connection Schema) ──┬──> BE-004 (Plaid Integration)
+                             └──> BE-005 (Connection Lifecycle)
 
-DB-003 (Transaction Schema) ──> BE-006 (Transaction Sync) ──> BE-TEST-006
+DB-003 (Transaction Schema) ──> BE-006 (Transaction Sync)
 
-DB-004 (Subscription Schema) ──┬──> BE-007 (Subscription Detection) ──> BE-TEST-007 ──> MOB-001 (Dashboard UI) ──> MOB-TEST-001
-                               ├──> BE-008 (Subscription CRUD) ──> BE-TEST-008 ──> MOB-002 (Subscription List) ──> MOB-TEST-002
-                               └──> BE-009 (Categorization) ──> BE-TEST-009
+DB-004 (Subscription Schema) ──┬──> BE-007 (Subscription Detection) ──> MOB-001 (Dashboard UI)
+                               ├──> BE-008 (Subscription CRUD) ──> MOB-002 (Subscription List)
+                               └──> BE-009 (Categorization)
 
-DB-005 (Cancellation Schema) ──┬──> BE-010 (Cancellation Requests) ──> BE-TEST-010 ──> MOB-003 (Cancellation UI) ──> MOB-TEST-003
-                               └──> BE-011 (Cancellation Tracking) ──> BE-TEST-011
+DB-005 (Cancellation Schema) ──┬──> BE-010 (Cancellation Requests) ──> MOB-003 (Cancellation UI)
+                               └──> BE-011 (Cancellation Tracking)
 
-DB-006 (Notification Schema) ──┬──> BE-012 (Alert Engine) ──> BE-TEST-012 ──> MOB-004 (Push Notifications) ──> MOB-TEST-004
-                               └──> BE-013 (Notification Preferences) ──> BE-TEST-013
+DB-006 (Notification Schema) ──┬──> BE-012 (Alert Engine) ──> MOB-004 (Push Notifications)
+                               └──> BE-013 (Notification Preferences)
 
-DB-007 (Analytics Schema) ──> BE-014 (Dashboard Aggregation) ──> BE-TEST-014 ──> MOB-005 (Insights UI) ──> MOB-TEST-005
+DB-007 (Analytics Schema) ──> BE-014 (Dashboard Aggregation) ──> MOB-005 (Insights UI)
 
-DB-008 (Negotiation Schema) ──┬──> BE-015 (Negotiation Requests) ──> BE-TEST-015 ──> MOB-006 (Bill Upload UI) ──> MOB-TEST-006
-                              └──> BE-016 (Negotiation Tracking) ──> BE-TEST-016
+DB-008 (Negotiation Schema) ──┬──> BE-015 (Negotiation Requests) ──> MOB-006 (Bill Upload UI)
+                              └──> BE-016 (Negotiation Tracking)
 
-DB-009 (Security Schema) ──> BE-017 (Audit Logging) ──> BE-TEST-017 ──> MOB-007 (Security Activity UI) ──> MOB-TEST-007
+DB-009 (Security Schema) ──> BE-017 (Audit Logging) ──> MOB-007 (Security Activity UI)
 
-BE-002 (Authentication) ──> MOB-008 (Login/OAuth UI) ──> MOB-TEST-008
-BE-003 (Profile Management) ──> MOB-009 (Settings UI) ──> MOB-TEST-009
+BE-002 (Authentication) ──> MOB-008 (Login/OAuth UI)
+BE-003 (Profile Management) ──> MOB-009 (Settings UI)
 ```
 
 ---
@@ -75,43 +75,24 @@ Design and implement database schema for User, Credential, Consent, TwoFactorAut
 - Indexes: `users.email`, `credentials.user_id`, `auth_sessions.user_id + expires_at`
 - Migration scripts with rollback support
 
-**Definition of Done:**
-- Schema migration files created and tested
-- Seed data for testing (5+ users)
-- Documentation of constraints and indexes
-- Reviewed by DB Tester
-
-**Blocking:** None
-**Blocked By:** None
-
----
-
-### DB-TEST-001: Validate User Schema
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-001 (implicit)
-**Priority:** Critical
-**Estimate:** 2 story points
-
-**Context:**
-Ensure User schema meets functional and security requirements.
-
-**Description:**
-Validate DB-001 schema design, constraints, and indexes. Test cascade behavior on user deletion.
-
-**Acceptance Criteria:**
+**Test Criteria (DB-TEST-001):**
 - Verify all constraints (NOT NULL, UNIQUE, FK)
 - Test cascade deletes remove credentials, consents, 2FA, sessions
 - Validate indexes exist and improve query performance
 - Check encryption is enforced for sensitive columns (password_hash, 2FA secret)
 - Load test: insert 10,000 users and query by email in <100ms
-
-**Definition of Done:**
 - Test report documenting validation results
 - Performance benchmark results logged
 - Sign-off on DB-001 completion
 
-**Blocking:** BE-001, BE-002, BE-003
-**Blocked By:** DB-001
+**Definition of Done:**
+- Schema migration files created and tested
+- Seed data for testing (5+ users)
+- Documentation of constraints and indexes
+- Reviewed by DB Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** None
 
 ---
 
@@ -134,42 +115,23 @@ Design and implement schema for Connection and linked FinancialAccount entities.
 - Constraints: `access_token` must be encrypted before storage
 - Migration with rollback
 
+**Test Criteria (DB-TEST-002):**
+- Verify `access_token` encryption
+- Test cascade delete: disconnecting connection removes financial_accounts
+- Validate user can have unlimited connections
+- Test query performance: fetch all connections for user in <50ms
+- Test report with validation results
+- Encryption verification documented
+- Sign-off on DB-002 completion
+
 **Definition of Done:**
 - Schema migration files created
 - Seed data for testing (multiple connections per user)
 - Documentation of encryption strategy
 - Reviewed by DB Tester
-
+- All test criteria passed
 **Blocking:** None
 **Blocked By:** None
-
----
-
-### DB-TEST-002: Validate Connection Schema
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-001 (Connection)
-**Priority:** Critical
-**Estimate:** 2 story points
-
-**Context:**
-Ensure Connection schema supports secure token storage and multi-account scenarios.
-
-**Description:**
-Validate DB-002 schema, test encryption enforcement, and multi-connection queries.
-
-**Acceptance Criteria:**
-- Verify `access_token` encryption
-- Test cascade delete: disconnecting connection removes financial_accounts
-- Validate user can have unlimited connections
-- Test query performance: fetch all connections for user in <50ms
-
-**Definition of Done:**
-- Test report with validation results
-- Encryption verification documented
-- Sign-off on DB-002 completion
-
-**Blocking:** BE-004, BE-005
-**Blocked By:** DB-002
 
 ---
 
@@ -192,42 +154,23 @@ Design and implement schema for Transaction entities with support for large data
 - Partition by `date` (monthly partitions for scalability)
 - Migration with rollback
 
+**Test Criteria (DB-TEST-003):**
+- Verify composite index improves date range queries
+- Test bulk insert: 10,000 transactions in <5 seconds
+- Validate partitioning: queries restricted to single partition execute in <100ms
+- Test foreign currency handling (non-USD amounts)
+- Test report with performance benchmarks
+- Partitioning validation documented
+- Sign-off on DB-003 completion
+
 **Definition of Done:**
 - Schema migration files created
 - Seed data for testing (1000+ transactions across multiple accounts)
 - Documentation of partitioning strategy
 - Reviewed by DB Tester
-
+- All test criteria passed
 **Blocking:** None
 **Blocked By:** None
-
----
-
-### DB-TEST-003: Validate Transaction Schema
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-002
-**Priority:** Critical
-**Estimate:** 2 story points
-
-**Context:**
-Ensure Transaction schema supports high-volume inserts and efficient querying.
-
-**Description:**
-Validate DB-003 schema, test partitioning, and query performance.
-
-**Acceptance Criteria:**
-- Verify composite index improves date range queries
-- Test bulk insert: 10,000 transactions in <5 seconds
-- Validate partitioning: queries restricted to single partition execute in <100ms
-- Test foreign currency handling (non-USD amounts)
-
-**Definition of Done:**
-- Test report with performance benchmarks
-- Partitioning validation documented
-- Sign-off on DB-003 completion
-
-**Blocking:** BE-006
-**Blocked By:** DB-003
 
 ---
 
@@ -251,43 +194,24 @@ Design and implement schema for Subscription, Category, and SubscriptionHistory 
 - Seed default categories: Entertainment, Utilities, Software, Health, Other
 - Migration with rollback
 
-**Definition of Done:**
-- Schema migration files created
-- Seed data: default categories and 20+ test subscriptions
-- Documentation of frequency enum and status lifecycle
-- Reviewed by DB Tester
-
-**Blocking:** None
-**Blocked By:** None
-
----
-
-### DB-TEST-004: Validate Subscription Schema
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-003, REQ-DB-004
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Ensure Subscription schema supports complex queries for dashboard and analytics.
-
-**Description:**
-Validate DB-004 schema, test category relationships, and aggregation queries.
-
-**Acceptance Criteria:**
+**Test Criteria (DB-TEST-004):**
 - Verify user can create custom categories
 - Test cascade delete: user deletion removes custom categories and subscriptions
 - Validate subscription history links to transactions
 - Test aggregation: calculate monthly total for user in <200ms
 - Test query: fetch active subscriptions with next_billing_date in next 7 days in <100ms
-
-**Definition of Done:**
 - Test report with query performance benchmarks
 - Category relationship validation documented
 - Sign-off on DB-004 completion
 
-**Blocking:** BE-007, BE-008, BE-009
-**Blocked By:** DB-004
+**Definition of Done:**
+- Schema migration files created
+- Seed data: default categories and 20+ test subscriptions
+- Documentation of frequency enum and status lifecycle
+- Reviewed by DB Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** None
 
 ---
 
@@ -309,41 +233,22 @@ Design and implement schema for CancellationRequest and Dispute entities.
 - Indexes: `cancellation_requests.user_id + status`, `disputes.cancellation_request_id`
 - Migration with rollback
 
+**Test Criteria (DB-TEST-005):**
+- Verify cancellation_request.status transitions are valid
+- Test dispute linkage to transactions
+- Validate query: fetch all pending cancellations for user in <50ms
+- Test report with validation results
+- Status transition matrix documented
+- Sign-off on DB-005 completion
+
 **Definition of Done:**
 - Schema migration files created
 - Seed data for testing (various statuses)
 - Documentation of status transitions
 - Reviewed by DB Tester
-
+- All test criteria passed
 **Blocking:** None
 **Blocked By:** None
-
----
-
-### DB-TEST-005: Validate Cancellation Schema
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-005, REQ-DB-006
-**Priority:** High
-**Estimate:** 2 story points
-
-**Context:**
-Ensure Cancellation schema supports status tracking and dispute linkage.
-
-**Description:**
-Validate DB-005 schema, test status transitions, and dispute queries.
-
-**Acceptance Criteria:**
-- Verify cancellation_request.status transitions are valid
-- Test dispute linkage to transactions
-- Validate query: fetch all pending cancellations for user in <50ms
-
-**Definition of Done:**
-- Test report with validation results
-- Status transition matrix documented
-- Sign-off on DB-005 completion
-
-**Blocking:** BE-010, BE-011
-**Blocked By:** DB-005
 
 ---
 
@@ -366,41 +271,22 @@ Design and implement schema for NotificationPreference and Alert entities.
 - Index: `alerts.user_id + sent_at DESC`
 - Migration with rollback
 
+**Test Criteria (DB-TEST-006):**
+- Verify unique constraint on user_id + alert_type
+- Test JSON channels field stores and queries correctly
+- Validate query: fetch all sent alerts for user in last 30 days in <100ms
+- Test report with validation results
+- JSON schema examples documented
+- Sign-off on DB-006 completion
+
 **Definition of Done:**
 - Schema migration files created
 - Seed data: default notification preferences for test users
 - Documentation of alert_type enum and channel JSON structure
 - Reviewed by DB Tester
-
+- All test criteria passed
 **Blocking:** None
 **Blocked By:** None
-
----
-
-### DB-TEST-006: Validate Notification Schema
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-007
-**Priority:** Medium
-**Estimate:** 2 story points
-
-**Context:**
-Ensure Notification schema supports flexible preference management and alert queries.
-
-**Description:**
-Validate DB-006 schema, test JSON channel storage, and alert history queries.
-
-**Acceptance Criteria:**
-- Verify unique constraint on user_id + alert_type
-- Test JSON channels field stores and queries correctly
-- Validate query: fetch all sent alerts for user in last 30 days in <100ms
-
-**Definition of Done:**
-- Test report with validation results
-- JSON schema examples documented
-- Sign-off on DB-006 completion
-
-**Blocking:** BE-012, BE-013
-**Blocked By:** DB-006
 
 ---
 
@@ -423,42 +309,23 @@ Design and implement materialized views or denormalized tables for dashboard agg
 - Indexes: `dashboard_metrics.user_id`, `category_spending.user_id + month`
 - Migration with rollback
 
+**Test Criteria (DB-TEST-007):**
+- Verify dashboard_metrics accurately sums subscription amounts
+- Test refresh: views update within 1 minute of subscription change
+- Validate query: fetch dashboard for user in <50ms
+- Test category_spending: monthly totals match raw subscription data
+- Test report with accuracy and performance results
+- Refresh timing benchmarks documented
+- Sign-off on DB-007 completion
+
 **Definition of Done:**
 - Materialized views created with refresh logic
 - Seed data populated
 - Documentation of refresh strategy
 - Reviewed by DB Tester
-
+- All test criteria passed
 **Blocking:** None
 **Blocked By:** DB-004 (depends on subscriptions table)
-
----
-
-### DB-TEST-007: Validate Analytics Read Models
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-008
-**Priority:** Medium
-**Estimate:** 2 story points
-
-**Context:**
-Ensure analytics views return correct aggregations and refresh efficiently.
-
-**Description:**
-Validate DB-007 materialized views, test refresh performance, and aggregation accuracy.
-
-**Acceptance Criteria:**
-- Verify dashboard_metrics accurately sums subscription amounts
-- Test refresh: views update within 1 minute of subscription change
-- Validate query: fetch dashboard for user in <50ms
-- Test category_spending: monthly totals match raw subscription data
-
-**Definition of Done:**
-- Test report with accuracy and performance results
-- Refresh timing benchmarks documented
-- Sign-off on DB-007 completion
-
-**Blocking:** BE-014
-**Blocked By:** DB-007
 
 ---
 
@@ -480,42 +347,23 @@ Design and implement schema for NegotiationRequest and BillDocument entities.
 - Indexes: `negotiation_requests.user_id + status`, `bill_documents.negotiation_request_id`
 - Migration with rollback
 
+**Test Criteria (DB-TEST-008):**
+- Verify OCR JSON field stores extracted bill data
+- Test cascade delete: negotiation_request deletion removes bill_documents
+- Validate query: fetch all completed negotiations for user in <100ms
+- Test success_fee calculation: 15% of annual_savings
+- Test report with validation results
+- OCR JSON schema examples documented
+- Sign-off on DB-008 completion
+
 **Definition of Done:**
 - Schema migration files created
 - Seed data for testing (various statuses and bill types)
 - Documentation of bill_type enum and OCR JSON structure
 - Reviewed by DB Tester
-
+- All test criteria passed
 **Blocking:** None
 **Blocked By:** None
-
----
-
-### DB-TEST-008: Validate Negotiation Schema
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-009
-**Priority:** Medium
-**Estimate:** 2 story points
-
-**Context:**
-Ensure Negotiation schema supports document storage and fee calculation.
-
-**Description:**
-Validate DB-008 schema, test bill document linkage, and success fee calculation.
-
-**Acceptance Criteria:**
-- Verify OCR JSON field stores extracted bill data
-- Test cascade delete: negotiation_request deletion removes bill_documents
-- Validate query: fetch all completed negotiations for user in <100ms
-- Test success_fee calculation: 15% of annual_savings
-
-**Definition of Done:**
-- Test report with validation results
-- OCR JSON schema examples documented
-- Sign-off on DB-008 completion
-
-**Blocking:** BE-015, BE-016
-**Blocked By:** DB-008
 
 ---
 
@@ -538,113 +386,23 @@ Design and implement schema for SecurityEvent entities with long-term retention.
 - Retention policy: 2 years minimum
 - Migration with rollback
 
+**Test Criteria (DB-TEST-009):**
+- Verify partitioning improves query performance for date ranges
+- Test bulk insert: 1000 security events in <2 seconds
+- Validate query: fetch user's login history (last 30 days) in <100ms
+- Test retention: events older than 2 years can be archived/deleted
+- Test report with performance benchmarks
+- Partitioning and retention validation documented
+- Sign-off on DB-009 completion
+
 **Definition of Done:**
 - Schema migration files created
 - Seed data for testing (multiple event types)
 - Documentation of event_type enum and retention policy
 - Reviewed by DB Tester
-
+- All test criteria passed
 **Blocking:** None
 **Blocked By:** None
-
----
-
-### DB-TEST-009: Validate Security Audit Schema
-**Assignee:** DB Tester
-**Requirements:** REQ-DB-010
-**Priority:** Medium
-**Estimate:** 2 story points
-
-**Context:**
-Ensure Security schema supports high-volume logging and efficient queries.
-
-**Description:**
-Validate DB-009 schema, test partitioning, and event log queries.
-
-**Acceptance Criteria:**
-- Verify partitioning improves query performance for date ranges
-- Test bulk insert: 1000 security events in <2 seconds
-- Validate query: fetch user's login history (last 30 days) in <100ms
-- Test retention: events older than 2 years can be archived/deleted
-
-**Definition of Done:**
-- Test report with performance benchmarks
-- Partitioning and retention validation documented
-- Sign-off on DB-009 completion
-
-**Blocking:** BE-017
-**Blocked By:** DB-009
-
----
-
-## Backend Team Issues
-
-### BE-001: User Registration Service
-**Assignee:** Backend Dev
-**Requirements:** REQ-BE-001, REQ-BE-007
-**Priority:** Critical
-**Estimate:** 5 story points
-
-**Context:**
-Implement user registration with email/password and OAuth (Google, Facebook).
-
-**Description:**
-Build registration service supporting multiple auth providers, email confirmation, and consent recording.
-
-**Acceptance Criteria:**
-- REST endpoint: `POST /api/v1/auth/register`
-- Request body: `{provider: "email|google|facebook", email, password?, oauth_token?}`
-- Validate email uniqueness
-- Hash password with bcrypt (12 rounds) for email provider
-- Verify OAuth token with Google/Facebook APIs
-- Create User entity and Credential entity
-- Record Consent entity with terms version
-- Send email confirmation (email provider only)
-- Return 201 with user_id and session token
-- Return 409 if email exists
-- Rate limit: 5 requests per IP per hour
-
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with DB
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-001
-
----
-
-### BE-TEST-001: Test User Registration
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-001
-**Priority:** Critical
-**Estimate:** 3 story points
-
-**Context:**
-Validate registration flows for all providers and error cases.
-
-**Description:**
-Test BE-001 endpoints with valid/invalid inputs, concurrent requests, and edge cases.
-
-**Acceptance Criteria:**
-- Test email registration with valid password
-- Test duplicate email returns 409
-- Test weak password rejected
-- Test Google OAuth token validation (mock)
-- Test Facebook OAuth token validation (mock)
-- Test email confirmation sent
-- Test consent recorded with correct timestamp
-- Test rate limiting after 5 requests
-- Load test: 100 concurrent registrations succeed
-
-**Definition of Done:**
-- Test suite executed with 100% pass rate
-- Test report documenting coverage and edge cases
-- Sign-off on BE-001 completion
-
-**Blocking:** MOB-008
-**Blocked By:** BE-001
 
 ---
 
@@ -674,30 +432,7 @@ Build authentication service with JWT-based sessions and 2FA support.
 - REST endpoint: `POST /api/v1/auth/password/change` (require current password)
 - REST endpoint: `POST /api/v1/auth/password/reset` (send email reset link)
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with DB and 2FA mocks
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-001
-
----
-
-### BE-TEST-002: Test Authentication Service
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-002, REQ-BE-003, REQ-BE-004
-**Priority:** Critical
-**Estimate:** 3 story points
-
-**Context:**
-Validate login flows, 2FA enforcement, and password operations.
-
-**Description:**
-Test BE-002 endpoints with valid/invalid credentials, 2FA scenarios, and token lifecycle.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-002):**
 - Test email/password login success
 - Test invalid password returns 401
 - Test 2FA required if enabled
@@ -708,14 +443,18 @@ Test BE-002 endpoints with valid/invalid credentials, 2FA scenarios, and token l
 - Test password reset email sent
 - Test logout revokes session
 - Load test: 500 concurrent logins
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting token lifecycle and 2FA scenarios
 - Sign-off on BE-002 completion
 
-**Blocking:** MOB-008
-**Blocked By:** BE-002
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with DB and 2FA mocks
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-001
 
 ---
 
@@ -742,30 +481,7 @@ Build profile management service supporting updates and account deletion with gr
 - REST endpoint: `POST /api/v1/users/me/undelete` (cancel deletion during grace period)
 - After 7 days, hard delete User and cascade all data
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with DB
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-001
-
----
-
-### BE-TEST-003: Test Profile Management
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-006, REQ-BE-005
-**Priority:** High
-**Estimate:** 2 story points
-
-**Context:**
-Validate profile updates, email verification, and deletion grace period.
-
-**Description:**
-Test BE-003 endpoints with valid/invalid updates and deletion scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-003):**
 - Test profile fetch returns correct data
 - Test profile update succeeds
 - Test email change sends verification
@@ -773,14 +489,18 @@ Test BE-003 endpoints with valid/invalid updates and deletion scenarios.
 - Test undelete restores account within grace period
 - Test hard delete after 7 days removes all data
 - Test Plaid connections revoked on deletion
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting deletion lifecycle
 - Sign-off on BE-003 completion
 
-**Blocking:** MOB-009
-**Blocked By:** BE-003
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with DB
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-001
 
 ---
 
@@ -808,30 +528,7 @@ Build Plaid integration service supporting Link, account connections, and error 
 - Emit ConnectionEstablished domain event
 - Error handling: display user-friendly messages for Plaid error codes
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage (with Plaid mocks)
-- Integration tests with Plaid Sandbox
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-002
-
----
-
-### BE-TEST-004: Test Plaid Integration
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-008, REQ-BE-012
-**Priority:** Critical
-**Estimate:** 3 story points
-
-**Context:**
-Validate Plaid Link flow, token exchange, and error handling.
-
-**Description:**
-Test BE-004 endpoints with Plaid Sandbox and error scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-004):**
 - Test Link token generation succeeds
 - Test public_token exchange creates Connection
 - Test access_token encrypted in DB
@@ -840,14 +537,18 @@ Test BE-004 endpoints with Plaid Sandbox and error scenarios.
 - Test reconnect flow
 - Test retry logic for transient failures
 - Test user-friendly error messages for Plaid errors
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate (Plaid Sandbox)
 - Test report documenting error scenarios
 - Sign-off on BE-004 completion
 
-**Blocking:** MOB-008 (connection UI dependency)
-**Blocked By:** BE-004
+**Definition of Done:**
+- Unit tests: 90%+ coverage (with Plaid mocks)
+- Integration tests with Plaid Sandbox
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-002
 
 ---
 
@@ -876,30 +577,7 @@ Build service for connection management and status tracking.
 - Mark associated Subscriptions as 'unverified'
 - Log SecurityEvent for connection_removed
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with DB and scheduler
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-002
-
----
-
-### BE-TEST-005: Test Connection Lifecycle
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-009, REQ-BE-010, REQ-BE-011
-**Priority:** High
-**Estimate:** 2 story points
-
-**Context:**
-Validate connection listing, refresh, and disconnection flows.
-
-**Description:**
-Test BE-005 endpoints with multi-connection scenarios and edge cases.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-005):**
 - Test list connections returns all user connections
 - Test manual refresh updates last_sync_at
 - Test auto-sync job runs daily
@@ -907,14 +585,18 @@ Test BE-005 endpoints with multi-connection scenarios and edge cases.
 - Test disconnect requires confirmation
 - Test disconnect revokes Plaid token
 - Test subscriptions marked unverified after disconnect
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting multi-connection scenarios
 - Sign-off on BE-005 completion
 
-**Blocking:** MOB-002 (connection management UI)
-**Blocked By:** BE-005
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with DB and scheduler
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-002
 
 ---
 
@@ -940,31 +622,7 @@ Build transaction sync service with bulk insert optimization.
 - Error handling: log failures, retry transient errors
 - Performance target: sync 1000 transactions in <5 seconds
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage (with Plaid mocks)
-- Integration tests with DB
-- Performance benchmarks documented
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-003
-
----
-
-### BE-TEST-006: Test Transaction Sync
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-010, REQ-DB-002
-**Priority:** Critical
-**Estimate:** 3 story points
-
-**Context:**
-Validate transaction fetching, deduplication, and performance.
-
-**Description:**
-Test BE-006 service with large transaction sets and edge cases.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-006):**
 - Test initial sync fetches 90 days of transactions
 - Test incremental sync fetches only new transactions
 - Test deduplication prevents duplicate inserts
@@ -972,15 +630,20 @@ Test BE-006 service with large transaction sets and edge cases.
 - Test foreign currency transactions stored correctly
 - Test bulk insert performance: 1000 transactions in <5 seconds
 - Test TransactionsSynced event emitted
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Performance benchmarks meet target
 - Test report documenting deduplication and pagination
 - Sign-off on BE-006 completion
 
-**Blocking:** BE-007 (subscription detection depends on transactions)
-**Blocked By:** BE-006
+**Definition of Done:**
+- Unit tests: 90%+ coverage (with Plaid mocks)
+- Integration tests with DB
+- Performance benchmarks documented
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-003
 
 ---
 
@@ -1009,31 +672,7 @@ Build subscription detection algorithm and notification service.
 - Duplicate detection: merge if merchant + amount match existing subscription
 - Performance target: process 1000 transactions in <5 seconds
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with real transaction patterns
-- Algorithm accuracy metrics documented (precision/recall)
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-006
-
----
-
-### BE-TEST-007: Test Subscription Detection
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-013, REQ-BE-014, REQ-BE-020, REQ-BE-021, REQ-BE-022
-**Priority:** Critical
-**Estimate:** 5 story points
-
-**Context:**
-Validate detection algorithm accuracy and edge cases.
-
-**Description:**
-Test BE-007 algorithm with diverse transaction patterns and edge cases.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-007):**
 - Test monthly subscription detection (same amount, 28-31 day intervals)
 - Test annual subscription detection
 - Test variable amount subscriptions (usage-based)
@@ -1043,15 +682,20 @@ Test BE-007 algorithm with diverse transaction patterns and edge cases.
 - Test edge case: merchant name variations
 - Measure accuracy: >90% precision, >85% recall on test dataset
 - Test performance: 1000 transactions processed in <5 seconds
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Accuracy metrics documented
 - Test report with edge cases and false positive analysis
 - Sign-off on BE-007 completion
 
-**Blocking:** MOB-001, MOB-002
-**Blocked By:** BE-007
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with real transaction patterns
+- Algorithm accuracy metrics documented (precision/recall)
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** BE-TEST-006
 
 ---
 
@@ -1079,30 +723,7 @@ Build subscription management service with query and command endpoints.
 - Emit SubscriptionArchived domain event
 - REST endpoint: `PATCH /api/v1/subscriptions/{id}/reactivate` (unarchive)
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with DB
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-007
-
----
-
-### BE-TEST-008: Test Subscription CRUD
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-015, REQ-BE-016, REQ-BE-017, REQ-BE-018, REQ-BE-019
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Validate subscription queries, manual additions, and archiving.
-
-**Description:**
-Test BE-008 endpoints with various filter/sort combinations and edge cases.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-008):**
 - Test list subscriptions with filters and sorting
 - Test total cost calculations
 - Test subscription detail view includes payment history
@@ -1111,14 +732,18 @@ Test BE-008 endpoints with various filter/sort combinations and edge cases.
 - Test archive subscription (status changes to inactive)
 - Test reactivate subscription
 - Test edge case: archive already inactive subscription
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting query performance
 - Sign-off on BE-008 completion
 
-**Blocking:** MOB-002
-**Blocked By:** BE-008
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with DB
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** BE-TEST-007
 
 ---
 
@@ -1144,45 +769,26 @@ Build categorization service with merchant database integration.
 - REST endpoint: `PATCH /api/v1/subscriptions/{id}/categorize` (override category)
 - Emit SubscriptionCategorized domain event
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with merchant API mock
-- Categorization accuracy: >80% on test dataset
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-004
-
----
-
-### BE-TEST-009: Test Categorization Service
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-018
-**Priority:** Medium
-**Estimate:** 2 story points
-
-**Context:**
-Validate auto-categorization accuracy and custom category CRUD.
-
-**Description:**
-Test BE-009 service with known merchants and edge cases.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-009):**
 - Test default categories seeded
 - Test auto-categorization for known merchants (Netflix→Entertainment, etc.)
 - Test fallback to 'Other' for unknown merchants
 - Test create custom category
 - Test override subscription category
 - Test categorization accuracy: >80% on test dataset
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Accuracy metrics documented
 - Sign-off on BE-009 completion
 
-**Blocking:** MOB-001 (dashboard category breakdown)
-**Blocked By:** BE-009
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with merchant API mock
+- Categorization accuracy: >80% on test dataset
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-004
 
 ---
 
@@ -1207,43 +813,24 @@ Build cancellation service with premium assisted flow and free DIY instructions.
 - REST endpoint: `GET /api/v1/subscriptions/{id}/cancellation-instructions` (DIY instructions)
 - REST endpoint: `PATCH /api/v1/subscriptions/{id}/mark-cancelled` (user self-reports cancellation)
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with DB
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-005
-
----
-
-### BE-TEST-010: Test Cancellation Requests
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-023, REQ-BE-024
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Validate premium vs. free tier cancellation flows.
-
-**Description:**
-Test BE-010 endpoints with premium and free users.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-010):**
 - Test premium user creates CancellationRequest
 - Test free user receives DIY instructions
 - Test cancellation instructions include contact info and URL
 - Test user can self-mark subscription as cancelled
 - Test CancellationRequested event emitted for premium requests
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting tier-based logic
 - Sign-off on BE-010 completion
 
-**Blocking:** MOB-003
-**Blocked By:** BE-010
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with DB
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-005
 
 ---
 
@@ -1270,44 +857,25 @@ Build cancellation tracking service with status updates and dispute handling.
 - REST endpoint: `POST /api/v1/cancellations/{id}/dispute` (create dispute)
 - Create Dispute entity
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with DB and S3 mock
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-005
-
----
-
-### BE-TEST-011: Test Cancellation Tracking
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-025, REQ-BE-026, REQ-BE-027
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Validate status updates, confirmation generation, and dispute flow.
-
-**Description:**
-Test BE-011 endpoints with status transitions and post-cancellation scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-011):**
 - Test list cancellations
 - Test detail view shows timeline
 - Test status update triggers alert
 - Test confirmation PDF generated on completion
 - Test post-cancellation charge detection
 - Test dispute creation
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting status lifecycle
 - Sign-off on BE-011 completion
 
-**Blocking:** MOB-003 (cancellation status UI)
-**Blocked By:** BE-011
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with DB and S3 mock
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-005
 
 ---
 
@@ -1334,30 +902,7 @@ Build alert engine with rule evaluation and multi-channel delivery.
 - REST endpoint: `POST /api/v1/alerts/{id}/dismiss` (user dismisses alert)
 - Scheduled job: daily check for upcoming renewals (next_billing_date within preference window)
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with channel mocks (push, email, SMS)
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-006
-
----
-
-### BE-TEST-012: Test Alert Engine
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-028, REQ-BE-029, REQ-BE-030, REQ-BE-031
-**Priority:** High
-**Estimate:** 5 story points
-
-**Context:**
-Validate alert rule evaluation, timing, and multi-channel delivery.
-
-**Description:**
-Test BE-012 service with various alert types, preferences, and delivery scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-012):**
 - Test renewal alert sent 3 days before (user preference)
 - Test alert skipped during quiet hours
 - Test price increase alert sent on detection
@@ -1366,14 +911,18 @@ Test BE-012 service with various alert types, preferences, and delivery scenario
 - Test multi-channel delivery (push + email)
 - Test alert dismissed by user
 - Test scheduled job triggers renewal alerts daily
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting alert timing and delivery
 - Sign-off on BE-012 completion
 
-**Blocking:** MOB-004
-**Blocked By:** BE-012
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with channel mocks (push, email, SMS)
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-006
 
 ---
 
@@ -1397,43 +946,24 @@ Build preference management service with defaults and customization.
 - REST endpoint: `PATCH /api/v1/subscriptions/{id}/notification-override` (per-subscription override)
 - Emit NotificationPreferenceChanged domain event
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with DB
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-006
-
----
-
-### BE-TEST-013: Test Notification Preferences
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-032
-**Priority:** Medium
-**Estimate:** 2 story points
-
-**Context:**
-Validate preference CRUD and override logic.
-
-**Description:**
-Test BE-013 endpoints with preference updates and edge cases.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-013):**
 - Test default preferences seeded on user creation
 - Test fetch preferences
 - Test update alert type preference (enable/disable, channels, timing)
 - Test per-subscription override
 - Test quiet hours enforced by alert engine
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting override logic
 - Sign-off on BE-013 completion
 
-**Blocking:** MOB-009 (settings UI)
-**Blocked By:** BE-013
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with DB
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-006
 
 ---
 
@@ -1459,31 +989,7 @@ Build dashboard service using materialized views for performance.
 - Breakdown: cancelled_subscriptions_savings, negotiated_bills_savings, fee_waivers_savings
 - Performance target: dashboard loads in <2 seconds (mobile 4G)
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with materialized views
-- Performance benchmarks documented
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-007
-
----
-
-### BE-TEST-014: Test Dashboard Aggregation
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-033, REQ-BE-034, REQ-BE-035, REQ-BE-036
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Validate dashboard metrics accuracy and performance.
-
-**Description:**
-Test BE-014 endpoints with various subscription datasets and export formats.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-014):**
 - Test dashboard metrics match raw subscription data
 - Test category breakdown sums to total
 - Test drill-down returns correct subscriptions
@@ -1492,15 +998,20 @@ Test BE-014 endpoints with various subscription datasets and export formats.
 - Test PDF export
 - Test savings summary accuracy
 - Test performance: dashboard loads in <2 seconds
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Performance benchmarks meet target
 - Test report documenting accuracy and export formats
 - Sign-off on BE-014 completion
 
-**Blocking:** MOB-001, MOB-005
-**Blocked By:** BE-014
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with materialized views
+- Performance benchmarks documented
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-007
 
 ---
 
@@ -1529,44 +1040,25 @@ Build negotiation request service with document handling.
 - Create BillDocument entity with ocr_data
 - REST endpoint: `GET /api/v1/negotiations/providers` (list supported providers with success rates)
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with S3 and OCR mocks
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-008
-
----
-
-### BE-TEST-015: Test Negotiation Requests
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-039, REQ-BE-040, REQ-BE-044
-**Priority:** Medium
-**Estimate:** 3 story points
-
-**Context:**
-Validate negotiation flow, document upload, and OCR extraction.
-
-**Description:**
-Test BE-015 endpoints with various bill types and document formats.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-015):**
 - Test create negotiation request
 - Test upload PDF bill document
 - Test upload image bill document
 - Test OCR extraction populates ocr_data
 - Test manual entry fallback if OCR fails
 - Test list supported providers
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting OCR accuracy
 - Sign-off on BE-015 completion
 
-**Blocking:** MOB-006
-**Blocked By:** BE-015
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with S3 and OCR mocks
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-008
 
 ---
 
@@ -1593,30 +1085,7 @@ Build negotiation tracking service with payment integration.
 - Mark fee as paid
 - Emit FeePaymentReceived domain event
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with payment gateway mock
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-008
-
----
-
-### BE-TEST-016: Test Negotiation Tracking
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-041, REQ-BE-042, REQ-BE-043
-**Priority:** Medium
-**Estimate:** 3 story points
-
-**Context:**
-Validate status tracking, result display, and fee payment.
-
-**Description:**
-Test BE-016 endpoints with status transitions and payment scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-016):**
 - Test list negotiations
 - Test detail view shows timeline
 - Test status update triggers alert
@@ -1624,14 +1093,18 @@ Test BE-016 endpoints with status transitions and payment scenarios.
 - Test success fee calculated correctly (15% of annual savings)
 - Test fee payment processed via Stripe
 - Test fee payment failed handling
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting payment flow
 - Sign-off on BE-016 completion
 
-**Blocking:** MOB-006 (negotiation status UI)
-**Blocked By:** BE-016
+**Definition of Done:**
+- Unit tests: 90%+ coverage
+- Integration tests with payment gateway mock
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
+**Blocking:** None
+**Blocked By:** DB-TEST-008
 
 ---
 
@@ -1657,30 +1130,7 @@ Build audit logging service with anomaly detection.
 - REST endpoint: `POST /api/v1/security/logout-all` (revoke all sessions)
 - REST endpoint: `POST /api/v1/security/sessions/{id}/revoke` (revoke specific session)
 
-**Definition of Done:**
-- Unit tests: 90%+ coverage
-- Integration tests with GeoIP mock
-- API documentation (OpenAPI)
-- Reviewed by Backend Tester
-
-**Blocking:** None
-**Blocked By:** DB-TEST-009
-
----
-
-### BE-TEST-017: Test Security Audit Logging
-**Assignee:** Backend Tester
-**Requirements:** REQ-BE-045, REQ-BE-046, REQ-BE-047
-**Priority:** Medium
-**Estimate:** 3 story points
-
-**Context:**
-Validate event logging, anomaly detection, and session management.
-
-**Description:**
-Test BE-017 service with various security events and anomaly scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (BE-TEST-017):**
 - Test login event logged with device and location
 - Test password change event logged
 - Test anomaly detection: new location triggers alert
@@ -1688,85 +1138,18 @@ Test BE-017 service with various security events and anomaly scenarios.
 - Test fetch activity log
 - Test logout all sessions revokes tokens
 - Test revoke specific session
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting anomaly detection logic
 - Sign-off on BE-017 completion
 
-**Blocking:** MOB-007
-**Blocked By:** BE-017
-
----
-
-## Mobile Team Issues
-
-### MOB-001: Dashboard UI
-**Assignee:** Mobile Dev
-**Requirements:** REQ-MOB-001, REQ-BE-033, REQ-BE-034, REQ-BE-036
-**Priority:** High
-**Estimate:** 5 story points
-
-**Context:**
-Primary user interface displaying spending insights and metrics.
-
-**Description:**
-Build dashboard screen with total costs, trends, category breakdown, and savings summary.
-
-**Acceptance Criteria:**
-- Fetch dashboard data from `GET /api/v1/dashboard`
-- Display total monthly cost (large, prominent)
-- Display total annual cost
-- Display month-over-month trend indicator (up/down %)
-- Display quick stats: subscription count, highest cost subscription, newest subscription
-- Display category breakdown as pie chart (tap to drill down)
-- Display savings summary card (lifetime savings)
-- Pull-to-refresh
-- Loading states and error handling
-- Offline mode: show cached dashboard (last fetched)
-- Render in <2 seconds on 4G connection
-
 **Definition of Done:**
-- UI implemented for iOS and Android
-- Unit tests: 80%+ coverage
-- UI tests: happy path and error states
-- Accessibility: WCAG 2.1 Level AA
-- Reviewed by Mobile Tester
-
+- Unit tests: 90%+ coverage
+- Integration tests with GeoIP mock
+- API documentation (OpenAPI)
+- Reviewed by Backend Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** BE-TEST-014, BE-TEST-007, BE-TEST-009
-
----
-
-### MOB-TEST-001: Test Dashboard UI
-**Assignee:** Mobile Tester
-**Requirements:** REQ-MOB-001
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Validate dashboard UI renders correctly and handles edge cases.
-
-**Description:**
-Test MOB-001 screen with various data scenarios and network conditions.
-
-**Acceptance Criteria:**
-- Test dashboard renders with valid data
-- Test empty state (no subscriptions)
-- Test error state (API failure)
-- Test pull-to-refresh updates data
-- Test tap category drill-down navigates to subscriptions
-- Test offline mode shows cached data
-- Test performance: renders in <2 seconds on 4G
-- Test accessibility: screen reader navigation
-
-**Definition of Done:**
-- Test suite executed with 100% pass rate
-- Test report documenting edge cases and performance
-- Sign-off on MOB-001 completion
-
-**Blocking:** None
-**Blocked By:** MOB-001
+**Blocked By:** DB-TEST-009
 
 ---
 
@@ -1798,31 +1181,7 @@ Build subscription list screen and detail screen.
 - Pull-to-refresh
 - Offline mode: show cached list
 
-**Definition of Done:**
-- UI implemented for iOS and Android
-- Unit tests: 80%+ coverage
-- UI tests: list, filter, sort, detail navigation
-- Accessibility: WCAG 2.1 Level AA
-- Reviewed by Mobile Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-007, BE-TEST-008
-
----
-
-### MOB-TEST-002: Test Subscription List UI
-**Assignee:** Mobile Tester
-**Requirements:** REQ-BE-015, REQ-BE-016
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Validate subscription list and detail views with various filters and edge cases.
-
-**Description:**
-Test MOB-002 screens with data scenarios and interactions.
-
-**Acceptance Criteria:**
+**Test Criteria (MOB-TEST-002):**
 - Test list renders subscriptions
 - Test search filters by name
 - Test filter by status
@@ -1832,14 +1191,19 @@ Test MOB-002 screens with data scenarios and interactions.
 - Test quick actions (cancel, categorize, archive)
 - Test offline mode shows cached list
 - Test accessibility: screen reader, voiceover
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting filter/sort scenarios
 - Sign-off on MOB-002 completion
 
+**Definition of Done:**
+- UI implemented for iOS and Android
+- Unit tests: 80%+ coverage
+- UI tests: list, filter, sort, detail navigation
+- Accessibility: WCAG 2.1 Level AA
+- Reviewed by Mobile Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** MOB-002
+**Blocked By:** BE-TEST-007, BE-TEST-008
 
 ---
 
@@ -1865,31 +1229,7 @@ Build cancellation request and tracking screens.
 - Push notifications for status changes
 - Loading states and error handling
 
-**Definition of Done:**
-- UI implemented for iOS and Android
-- Unit tests: 80%+ coverage
-- UI tests: premium and free flows
-- Accessibility: WCAG 2.1 Level AA
-- Reviewed by Mobile Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-010, BE-TEST-011
-
----
-
-### MOB-TEST-003: Test Cancellation UI
-**Assignee:** Mobile Tester
-**Requirements:** REQ-BE-023, REQ-BE-024, REQ-BE-025
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Validate premium and free cancellation flows and status tracking.
-
-**Description:**
-Test MOB-003 screens with premium/free user scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (MOB-TEST-003):**
 - Test premium user sees "Request Cancellation" flow
 - Test free user sees DIY instructions
 - Test cancellation request created
@@ -1898,14 +1238,19 @@ Test MOB-003 screens with premium/free user scenarios.
 - Test push notification received on status change
 - Test mark as cancelled (free tier)
 - Test error handling (API failure)
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting tier-based flows
 - Sign-off on MOB-003 completion
 
+**Definition of Done:**
+- UI implemented for iOS and Android
+- Unit tests: 80%+ coverage
+- UI tests: premium and free flows
+- Accessibility: WCAG 2.1 Level AA
+- Reviewed by Mobile Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** MOB-003
+**Blocked By:** BE-TEST-010, BE-TEST-011
 
 ---
 
@@ -1932,30 +1277,7 @@ Build push notification infrastructure and handling.
 - Respect notification preferences (fetch from backend)
 - Badge count: unread alerts
 
-**Definition of Done:**
-- Push notifications working on iOS and Android
-- Unit tests: 80%+ coverage (notification handling logic)
-- Integration tests with FCM/APNS test environments
-- Reviewed by Mobile Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-012
-
----
-
-### MOB-TEST-004: Test Push Notifications
-**Assignee:** Mobile Tester
-**Requirements:** REQ-BE-028, MOB-002
-**Priority:** High
-**Estimate:** 3 story points
-
-**Context:**
-Validate push notification delivery and interaction.
-
-**Description:**
-Test MOB-004 push notifications with various scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (MOB-TEST-004):**
 - Test device token registered on launch
 - Test notification displayed (foreground and background)
 - Test tap notification navigates to correct screen
@@ -1964,14 +1286,18 @@ Test MOB-004 push notifications with various scenarios.
 - Test badge count updates
 - Test notification permission request
 - Test notifications respect user preferences
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting notification scenarios
 - Sign-off on MOB-004 completion
 
+**Definition of Done:**
+- Push notifications working on iOS and Android
+- Unit tests: 80%+ coverage (notification handling logic)
+- Integration tests with FCM/APNS test environments
+- Reviewed by Mobile Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** MOB-004
+**Blocked By:** BE-TEST-012
 
 ---
 
@@ -1999,31 +1325,7 @@ Build insights screen with charts and budget tracking.
 - Set budget: `POST /api/v1/budgets` with `{monthly_amount}`
 - Suggestions: subscriptions to cut (sorted by cost)
 
-**Definition of Done:**
-- UI implemented for iOS and Android
-- Unit tests: 80%+ coverage
-- UI tests: charts render, export works
-- Accessibility: WCAG 2.1 Level AA
-- Reviewed by Mobile Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-014
-
----
-
-### MOB-TEST-005: Test Insights UI
-**Assignee:** Mobile Tester
-**Requirements:** REQ-BE-034, REQ-BE-035, REQ-BE-037
-**Priority:** Medium
-**Estimate:** 3 story points
-
-**Context:**
-Validate insights charts, trends, and budget features.
-
-**Description:**
-Test MOB-005 screens with data scenarios and export.
-
-**Acceptance Criteria:**
+**Test Criteria (MOB-TEST-005):**
 - Test category drill-down displays subscriptions
 - Test trends chart renders last 12 months
 - Test event highlights on chart
@@ -2033,14 +1335,19 @@ Test MOB-005 screens with data scenarios and export.
 - Test set budget
 - Test budget alert displayed when exceeded
 - Test suggestions list
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting chart rendering and export
 - Sign-off on MOB-005 completion
 
+**Definition of Done:**
+- UI implemented for iOS and Android
+- Unit tests: 80%+ coverage
+- UI tests: charts render, export works
+- Accessibility: WCAG 2.1 Level AA
+- Reviewed by Mobile Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** MOB-005
+**Blocked By:** BE-TEST-014
 
 ---
 
@@ -2067,31 +1374,7 @@ Build negotiation request and tracking screens.
 - Pay fee button: `POST /api/v1/negotiations/{id}/pay-fee` → Stripe payment sheet
 - Push notifications for status changes
 
-**Definition of Done:**
-- UI implemented for iOS and Android
-- Unit tests: 80%+ coverage
-- UI tests: request flow, upload, payment
-- Accessibility: WCAG 2.1 Level AA
-- Reviewed by Mobile Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-015, BE-TEST-016
-
----
-
-### MOB-TEST-006: Test Bill Negotiation UI
-**Assignee:** Mobile Tester
-**Requirements:** REQ-BE-039, REQ-BE-040, REQ-BE-041, REQ-BE-042
-**Priority:** Medium
-**Estimate:** 3 story points
-
-**Context:**
-Validate negotiation flow, document upload, and payment.
-
-**Description:**
-Test MOB-006 screens with request and payment scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (MOB-TEST-006):**
 - Test create negotiation request
 - Test upload bill (camera and file picker)
 - Test OCR results displayed
@@ -2101,14 +1384,19 @@ Test MOB-006 screens with request and payment scenarios.
 - Test result screen shows savings
 - Test pay fee initiates Stripe payment
 - Test payment success/failure handling
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting upload and payment flows
 - Sign-off on MOB-006 completion
 
+**Definition of Done:**
+- UI implemented for iOS and Android
+- Unit tests: 80%+ coverage
+- UI tests: request flow, upload, payment
+- Accessibility: WCAG 2.1 Level AA
+- Reviewed by Mobile Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** MOB-006
+**Blocked By:** BE-TEST-015, BE-TEST-016
 
 ---
 
@@ -2133,45 +1421,26 @@ Build security activity screen with event log and session controls.
 - Tap session → "Revoke" button → `POST /api/v1/security/sessions/{id}/revoke`
 - Push notification for suspicious activity
 
-**Definition of Done:**
-- UI implemented for iOS and Android
-- Unit tests: 80%+ coverage
-- UI tests: log display, session revocation
-- Accessibility: WCAG 2.1 Level AA
-- Reviewed by Mobile Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-017
-
----
-
-### MOB-TEST-007: Test Security Activity UI
-**Assignee:** Mobile Tester
-**Requirements:** REQ-BE-045, REQ-BE-046
-**Priority:** Medium
-**Estimate:** 2 story points
-
-**Context:**
-Validate activity log and session management.
-
-**Description:**
-Test MOB-007 screen with event log and session scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (MOB-TEST-007):**
 - Test activity log displays events
 - Test suspicious activity highlighted
 - Test logout all devices
 - Test session list displays active sessions
 - Test revoke session
 - Test push notification for suspicious activity
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting session management
 - Sign-off on MOB-007 completion
 
+**Definition of Done:**
+- UI implemented for iOS and Android
+- Unit tests: 80%+ coverage
+- UI tests: log display, session revocation
+- Accessibility: WCAG 2.1 Level AA
+- Reviewed by Mobile Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** MOB-007
+**Blocked By:** BE-TEST-017
 
 ---
 
@@ -2200,31 +1469,7 @@ Build login, registration, and OAuth integration screens.
 - Onboarding tutorial: tooltips/overlays (skippable, re-accessible from settings)
 - Terms and Privacy consent: checkboxes before registration
 
-**Definition of Done:**
-- UI implemented for iOS and Android
-- Unit tests: 80%+ coverage
-- UI tests: login, registration, OAuth, 2FA
-- Accessibility: WCAG 2.1 Level AA
-- Reviewed by Mobile Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-001, BE-TEST-002
-
----
-
-### MOB-TEST-008: Test Login and OAuth UI
-**Assignee:** Mobile Tester
-**Requirements:** REQ-BE-001, REQ-BE-002
-**Priority:** Critical
-**Estimate:** 3 story points
-
-**Context:**
-Validate login, registration, and OAuth flows.
-
-**Description:**
-Test MOB-008 screens with valid/invalid inputs and OAuth scenarios.
-
-**Acceptance Criteria:**
+**Test Criteria (MOB-TEST-008):**
 - Test email/password login success
 - Test invalid credentials show error
 - Test registration creates account
@@ -2235,14 +1480,19 @@ Test MOB-008 screens with valid/invalid inputs and OAuth scenarios.
 - Test password reset email sent
 - Test onboarding tutorial (skip and complete)
 - Test terms consent required
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting OAuth and 2FA flows
 - Sign-off on MOB-008 completion
 
+**Definition of Done:**
+- UI implemented for iOS and Android
+- Unit tests: 80%+ coverage
+- UI tests: login, registration, OAuth, 2FA
+- Accessibility: WCAG 2.1 Level AA
+- Reviewed by Mobile Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** MOB-008
+**Blocked By:** BE-TEST-001, BE-TEST-002
 
 ---
 
@@ -2268,31 +1518,7 @@ Build comprehensive settings screen with nested sections.
 - Data export section: "Download My Data" → `GET /api/v1/export` → download CSV/JSON/PDF
 - Account deletion section: "Delete Account" → confirmation dialog → `DELETE /api/v1/users/me` → logout
 
-**Definition of Done:**
-- UI implemented for iOS and Android
-- Unit tests: 80%+ coverage
-- UI tests: all settings sections
-- Accessibility: WCAG 2.1 Level AA
-- Reviewed by Mobile Tester
-
-**Blocking:** None
-**Blocked By:** BE-TEST-003, BE-TEST-013
-
----
-
-### MOB-TEST-009: Test Settings UI
-**Assignee:** Mobile Tester
-**Requirements:** REQ-BE-003, REQ-BE-006, REQ-BE-013, REQ-BE-032, REQ-BE-038
-**Priority:** Medium
-**Estimate:** 3 story points
-
-**Context:**
-Validate all settings sections and interactions.
-
-**Description:**
-Test MOB-009 settings screens with various configurations.
-
-**Acceptance Criteria:**
+**Test Criteria (MOB-TEST-009):**
 - Test profile edit updates data
 - Test password change succeeds
 - Test 2FA enable displays backup codes
@@ -2301,15 +1527,16 @@ Test MOB-009 settings screens with various configurations.
 - Test premium upgrade flow (Stripe)
 - Test data export downloads
 - Test account deletion (with grace period)
-
-**Definition of Done:**
 - Test suite executed with 100% pass rate
 - Test report documenting settings interactions
 - Sign-off on MOB-009 completion
 
+**Definition of Done:**
+- UI implemented for iOS and Android
+- Unit tests: 80%+ coverage
+- UI tests: all settings sections
+- Accessibility: WCAG 2.1 Level AA
+- Reviewed by Mobile Tester
+- All test criteria passed
 **Blocking:** None
-**Blocked By:** MOB-009
-
----
-
-**End of Issues Document**
+**Blocked By:** BE-TEST-003, BE-TEST-013
