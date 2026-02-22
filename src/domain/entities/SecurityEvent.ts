@@ -7,7 +7,8 @@ export type SecurityEventType =
   | 'password_reset_completed'
   | 'two_factor_enabled'
   | 'two_factor_disabled'
-  | 'session_revoked';
+  | 'session_revoked'
+  | 'connection_removed';
 
 export interface SecurityEvent {
   id: string;

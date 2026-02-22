@@ -143,3 +143,74 @@
 ### Agent Updates
 
 - (append-only log; downstream agent writes updates here)
+
+---
+
+# BE-005: Connection Lifecycle Service
+
+**Run ID**: 2ea1b419-a342-4cc2-8639-a6c04afe8052
+**Created**: 2026-02-22 19:53 UTC
+
+## Quick Summary
+
+- Connection lifecycle management endpoints (GET list, POST refresh, DELETE disconnect)
+- Daily auto-sync scheduled job for active connections
+- Sync failure handling with alerts and status updates
+- Secure disconnection with confirmation, Plaid token revocation, and domain events
+- SecurityEvent logging for connection_removed
+
+## Backend Developer
+
+### Checklist
+
+- [x] Verify DB-TEST-002 is complete before starting
+- [x] Implement `GET /api/v1/connections` endpoint returning all connections for authenticated user
+- [x] Implement `POST /api/v1/connections/{id}/refresh` endpoint for manual sync
+- [x] Update `Connection.last_sync_at` after successful sync operations
+- [x] Implement scheduled job for daily auto-sync of all active connections
+- [x] Handle sync failures: update status to 'failed' and trigger alert
+- [x] Implement `DELETE /api/v1/connections/{id}` endpoint with confirmation requirement
+- [x] Validate request body contains `{confirmed: true}` before processing disconnect
+- [x] Integrate Plaid access_token revocation on disconnect
+- [x] Emit `ConnectionDisconnected` domain event on successful disconnect
+- [x] Mark associated Subscriptions as 'unverified' after disconnect
+- [x] Log SecurityEvent for `connection_removed` action
+- [x] Write unit tests achieving 90%+ coverage
+- [x] Write integration tests for DB operations
+- [x] Write integration tests for scheduler functionality
+- [x] Create OpenAPI documentation for all three endpoints
+
+### Agent Updates
+
+- 2026-02-22: Implemented all connection lifecycle endpoints
+- 2026-02-22: Created domain entities (Connection, Subscription), events (ConnectionDisconnected), and repositories
+- 2026-02-22: Added AlertProvider for sync failure notifications
+- 2026-02-22: 208 tests passing with 93%+ statement/line coverage, 89% branch coverage
+- 2026-02-22: OpenAPI 3.0 documentation created (docs/openapi/connections.yaml)
+- 2026-02-22: Implementation ready for QA review
+
+## Backend QA Engineer
+
+### Checklist
+
+- [ ] Review Backend Developer implementation for completeness
+- [ ] Test list connections returns all user connections
+- [ ] Test manual refresh updates `last_sync_at`
+- [ ] Test auto-sync job runs daily (verify scheduler configuration)
+- [ ] Test sync failure updates status to 'failed' and sends alert
+- [ ] Test disconnect requires confirmation (`{confirmed: true}`)
+- [ ] Test disconnect without confirmation returns appropriate error
+- [ ] Test disconnect revokes Plaid token
+- [ ] Test subscriptions marked 'unverified' after disconnect
+- [ ] Test ConnectionDisconnected event is emitted
+- [ ] Test SecurityEvent logged for connection_removed
+- [ ] Validate multi-connection scenarios (user with multiple connections)
+- [ ] Execute full test suite and verify 100% pass rate
+- [ ] Document test report for multi-connection scenarios
+- [ ] Verify 90%+ unit test coverage
+- [ ] Review OpenAPI documentation for accuracy
+- [ ] Sign-off on BE-005 completion
+
+### Agent Updates
+
+- (append-only log; downstream agent writes updates here)

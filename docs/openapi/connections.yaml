@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: Connection Lifecycle API
+  description: API for managing financial institution connections
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+paths:
+  /connections:
+    get:
+      summary: List all connections
+      description: Returns all financial institution connections for the authenticated user
+      operationId: listConnections
+      tags:
+        - Connections
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of connections retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConnectionSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /connections/{id}/refresh:
+    post:
+      summary: Manual sync connection
+      description: Manually trigger a sync for a specific connection with the financial institution
+      operationId: refreshConnection
+      tags:
+        - Connections
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Connection ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sync result (success or failure with updated connection status)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      connection:
+                        $ref: '#/components/schemas/ConnectionSummary'
+                  - type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: false
+                      error:
+                        type: string
+                        example: "Connection sync failed: institution temporarily unavailable"
+                      connection:
+                        $ref: '#/components/schemas/ConnectionSummary'
+        '400':
+          description: Connection is disconnected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Connection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /connections/{id}:
+    delete:
+      summary: Disconnect connection
+      description: |
+        Permanently disconnect a financial institution connection.
+        Requires explicit confirmation in the request body.
+        This action will:
+        - Revoke the Plaid access token
+        - Mark all associated subscriptions as 'unverified'
+        - Emit a ConnectionDisconnected domain event
+        - Log a security event
+      operationId: disconnectConnection
+      tags:
+        - Connections
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Connection ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - confirmed
+              properties:
+                confirmed:
+                  type: boolean
+                  description: Must be true to confirm disconnection
+                  example: true
+      responses:
+        '200':
+          description: Connection disconnected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  subscriptionsAffected:
+                    type: integer
+                    description: Number of subscriptions marked as unverified
+                    example: 3
+        '400':
+          description: Confirmation required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Confirmation required"
+                  message:
+                    type: string
+                    example: "Request body must include { confirmed: true }"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Connection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token
+
+  schemas:
+    ConnectionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Connection ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        institutionId:
+          type: string
+          description: Financial institution ID from Plaid
+          example: "ins_1"
+        institutionName:
+          type: string
+          description: Human-readable institution name
+          example: "Chase Bank"
+        status:
+          type: string
+          enum: [active, failed, disconnected]
+          description: Current connection status
+          example: "active"
+        lastSyncAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of last successful sync
+          example: "2024-01-15T10:30:00Z"
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when connection was created
+          example: "2024-01-01T09:00:00Z"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Connection not found"
+
+  responses:
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Authorization header required"
+
+tags:
+  - name: Connections
+    description: Financial institution connection management
