@@ -83,3 +83,63 @@
 ### Agent Updates
 
 - (append-only log; downstream agent writes updates here)
+
+---
+
+# BE-003: Profile Management Service
+
+**Run ID**: 1e300dc9-b790-4f2b-9d3a-b75fdbb6ce41
+**Created**: 2026-02-22 18:07 UTC
+
+## Quick Summary
+
+- Profile CRUD endpoints (GET, PATCH, DELETE, POST undelete)
+- Account deletion with 7-day grace period (soft delete → hard delete)
+- Email verification for email changes
+- Plaid Financial Institution connection revocation on deletion
+- 90%+ unit test coverage with OpenAPI documentation
+
+## Backend Developer
+
+### Checklist
+
+- [x] Implement `GET /api/v1/users/me` endpoint returning user profile data
+- [x] Implement `PATCH /api/v1/users/me` endpoint for updating name, phone, address, timezone, photo
+- [x] Implement email change flow with verification email trigger
+- [x] Implement `DELETE /api/v1/users/me` endpoint initiating soft delete with 7-day grace period
+- [x] Implement Plaid connection revocation on account deletion
+- [x] Implement deletion confirmation email with cancellation link
+- [x] Implement `POST /api/v1/users/me/undelete` endpoint to cancel deletion during grace period
+- [x] Implement scheduled job/mechanism for hard delete after 7-day grace period expires
+- [x] Implement cascade deletion of all user data on hard delete
+- [x] Write unit tests achieving 90%+ coverage
+- [x] Write integration tests with database
+- [x] Create OpenAPI documentation for all endpoints
+- [x] Self-review code before handoff to QA
+
+### Agent Updates
+
+- 2026-02-22: Implementation verified complete - all endpoints functional
+- 2026-02-22: 160 tests passing with 92.07% branch coverage (exceeds 90% requirement)
+- 2026-02-22: OpenAPI 3.0 documentation created (docs/openapi/profile.yaml)
+- 2026-02-22: Implementation ready for QA review
+
+## Backend QA Engineer
+
+### Checklist
+
+- [ ] Review Backend Developer implementation for completeness
+- [ ] Test profile fetch returns correct data
+- [ ] Test profile update succeeds for all fields (name, phone, address, timezone, photo)
+- [ ] Test email change triggers verification email
+- [ ] Test account deletion creates 7-day grace period (soft delete)
+- [ ] Test undelete restores account within grace period
+- [ ] Test hard delete after 7 days removes all user data
+- [ ] Test Plaid connections are revoked on deletion
+- [ ] Verify test suite executes with 100% pass rate
+- [ ] Produce test report documenting deletion lifecycle
+- [ ] Provide sign-off on BE-003 completion
+
+### Agent Updates
+
+- (append-only log; downstream agent writes updates here)
