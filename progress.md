@@ -214,3 +214,73 @@
 ### Agent Updates
 
 - (append-only log; downstream agent writes updates here)
+
+---
+
+# BE-006: Transaction Sync Service
+
+**Run ID**: b3691a81-1b5f-4297-87dc-72d5da44222e
+**Created**: 2026-02-22 20:29 UTC
+
+## Quick Summary
+
+- Transaction sync service for Plaid transactions (90 days initial, incremental daily)
+- Bulk insert with deduplication by Plaid transaction_id
+- Foreign currency support (stores original currency/amount)
+- Retry logic for transient errors (up to 3 attempts)
+- Performance target: 1000 transactions in <5 seconds
+
+## Backend Developer
+
+### Checklist
+
+- [x] Verify DB-TEST-003 is complete before starting
+- [x] Implement Plaid API client for transaction fetching
+- [x] Implement initial sync logic (fetch last 90 days of transactions)
+- [x] Implement incremental sync logic (fetch only new transactions daily)
+- [x] Implement pagination handling for large transaction sets (>500 transactions)
+- [x] Implement bulk insert with deduplication by Plaid transaction_id
+- [x] Handle foreign currency: store original currency code and amount
+- [x] Implement error handling: log failures, retry transient errors
+- [x] Emit TransactionsSynced domain event with transaction_ids after sync
+- [x] Write unit tests with Plaid mocks (target 90%+ coverage)
+- [x] Write integration tests with database
+- [x] Run performance benchmarks and verify 1000 transactions sync in <5 seconds
+- [x] Document performance benchmarks
+- [x] Create OpenAPI documentation for the service
+- [x] Self-review code before handoff to QA
+
+### Agent Updates
+
+- 2026-02-22: Created Transaction entity with foreign currency support
+- 2026-02-22: Implemented TransactionRepository with bulk insert and deduplication
+- 2026-02-22: Extended PlaidProvider with getTransactions (pagination, retry simulation)
+- 2026-02-22: Implemented TransactionSyncService with 90-day initial and incremental sync
+- 2026-02-22: Added TransactionsSynced domain event
+- 2026-02-22: Retry logic with exponential backoff (up to 3 attempts)
+- 2026-02-22: 244 tests passing (91.39% statements, 91.41% lines, 92.85% functions)
+- 2026-02-22: Performance verified: 1000 transactions in <5 seconds
+- 2026-02-22: OpenAPI 3.0 documentation created (docs/openapi/transactions.yaml)
+- 2026-02-22: Implementation ready for QA review
+
+## Backend QA Engineer
+
+### Checklist
+
+- [ ] Verify Backend Developer has completed implementation and self-review
+- [ ] Test initial sync fetches 90 days of transactions
+- [ ] Test incremental sync fetches only new transactions
+- [ ] Test deduplication prevents duplicate inserts
+- [ ] Test pagination handles >500 transactions correctly
+- [ ] Test foreign currency transactions stored with correct currency and amount
+- [ ] Test bulk insert performance: 1000 transactions in <5 seconds
+- [ ] Test TransactionsSynced event emitted with correct transaction_ids
+- [ ] Execute full test suite and verify 100% pass rate
+- [ ] Verify unit test coverage meets 90%+ threshold
+- [ ] Document test report covering deduplication and pagination
+- [ ] Verify performance benchmarks documented and meeting targets
+- [ ] Provide sign-off on BE-006 completion
+
+### Agent Updates
+
+- (append-only log; downstream agent writes updates here)
