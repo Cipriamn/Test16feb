@@ -1,0 +1,309 @@
+openapi: 3.0.3
+info:
+  title: AskTrim Profile Management API
+  description: API for managing user profiles, including account deletion with grace period
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+paths:
+  /users/me:
+    get:
+      summary: Get current user profile
+      description: Retrieves the authenticated user's profile information
+      operationId: getProfile
+      tags:
+        - Profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found or account scheduled for deletion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      summary: Update user profile
+      description: |
+        Updates the authenticated user's profile. Email changes require verification
+        via a confirmation email sent to the new address.
+      operationId: updateProfile
+      tags:
+        - Profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/UserProfile'
+                  - type: object
+                    properties:
+                      email_verification_sent:
+                        type: boolean
+                        description: Indicates if email verification was sent
+                      message:
+                        type: string
+                        description: Additional message about the update
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Initiate account deletion
+      description: |
+        Initiates account deletion with a 7-day grace period. During this period:
+        - All Plaid financial institution connections are revoked
+        - All active sessions are revoked
+        - A confirmation email with cancellation link is sent
+        - The user can cancel deletion via POST /users/me/undelete
+
+        After 7 days, the account and all associated data are permanently deleted.
+      operationId: deleteAccount
+      tags:
+        - Profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account deletion initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletionResponse'
+        '400':
+          description: Account already scheduled for deletion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/verify-email:
+    post:
+      summary: Verify email change
+      description: Completes an email change by verifying the token sent to the new email address
+      operationId: verifyEmailChange
+      tags:
+        - Profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Verification token from email
+      responses:
+        '200':
+          description: Email updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Email updated successfully
+                  profile:
+                    $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/undelete:
+    post:
+      summary: Cancel account deletion
+      description: |
+        Cancels a pending account deletion if still within the 7-day grace period.
+        A confirmation email is sent upon successful restoration.
+      operationId: undeleteAccount
+      tags:
+        - Profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account deletion cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Account deletion cancelled. Your account has been restored.
+        '400':
+          description: Account not scheduled for deletion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '410':
+          description: Grace period has expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User's unique identifier
+        email:
+          type: string
+          format: email
+          description: User's primary email address
+        name:
+          type: string
+          nullable: true
+          description: User's display name
+        phone:
+          type: string
+          nullable: true
+          description: User's phone number
+        address:
+          type: string
+          nullable: true
+          description: User's address
+        timezone:
+          type: string
+          nullable: true
+          description: User's timezone (IANA format)
+          example: America/New_York
+        photoUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to user's profile photo
+        pendingEmail:
+          type: string
+          format: email
+          nullable: true
+          description: Pending email change awaiting verification
+        twoFactorEnabled:
+          type: boolean
+          description: Whether 2FA is enabled for the account
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: User's display name
+        phone:
+          type: string
+          description: User's phone number
+        address:
+          type: string
+          description: User's address
+        timezone:
+          type: string
+          description: User's timezone (IANA format)
+          example: Europe/London
+        photo_url:
+          type: string
+          format: uri
+          description: URL to user's profile photo
+        email:
+          type: string
+          format: email
+          description: New email address (requires verification)
+
+    DeletionResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Account deletion initiated
+        scheduled_deletion_date:
+          type: string
+          format: date-time
+          description: Date when account will be permanently deleted
+        connections_revoked:
+          type: integer
+          description: Number of financial institution connections revoked
+        grace_period_days:
+          type: integer
+          example: 7
+          description: Number of days before permanent deletion
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Unauthorized

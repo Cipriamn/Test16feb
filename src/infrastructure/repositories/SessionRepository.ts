@@ -7,6 +7,7 @@ export interface ISessionRepository {
   save(session: AuthSession): Promise<AuthSession>;
   revoke(sessionId: string): Promise<void>;
   revokeAllForUser(userId: string): Promise<void>;
+  revokeAllUserSessions(userId: string): Promise<number>;
 }
 
 // In-memory implementation for MVP
@@ -50,6 +51,17 @@ export class InMemorySessionRepository implements ISessionRepository {
         session.revokedAt = new Date();
       }
     }
+  }
+
+  async revokeAllUserSessions(userId: string): Promise<number> {
+    let count = 0;
+    for (const session of this.sessions.values()) {
+      if (session.userId === userId && session.revokedAt === null) {
+        session.revokedAt = new Date();
+        count++;
+      }
+    }
+    return count;
   }
 
   // Test helper
