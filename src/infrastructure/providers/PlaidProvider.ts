@@ -31,7 +31,27 @@ export interface TransactionsGetResponse {
   next_cursor?: string;
 }
 
+export interface LinkTokenCreateResponse {
+  link_token: string;
+  expiration: string;
+  request_id: string;
+}
+
+export interface PublicTokenExchangeResponse {
+  access_token: string;
+  item_id: string;
+  request_id: string;
+}
+
+export interface InstitutionInfo {
+  institution_id: string;
+  name: string;
+}
+
 export interface IPlaidProvider {
+  createLinkToken(userId: string): Promise<LinkTokenCreateResponse>;
+  exchangePublicToken(publicToken: string): Promise<PublicTokenExchangeResponse>;
+  getInstitutionById(institutionId: string): Promise<InstitutionInfo>;
   revokeAllConnections(userId: string): Promise<number>;
   revokeConnection(accessToken: string): Promise<boolean>;
   syncConnection(accessToken: string): Promise<{ success: boolean; error?: string }>;
@@ -52,6 +72,49 @@ export class MockPlaidProvider implements IPlaidProvider {
   private syncFailures: Set<string> = new Set();
   private mockTransactions: Map<string, PlaidTransaction[]> = new Map();
   private transientErrors: Map<string, number> = new Map(); // accessToken -> remaining failures
+  private linkTokens: Map<string, { userId: string; expiration: Date }> = new Map();
+  private publicTokens: Map<string, { accessToken: string; itemId: string; institutionId: string }> = new Map();
+  private institutions: Map<string, string> = new Map([
+    ['ins_1', 'Chase'],
+    ['ins_2', 'Bank of America'],
+    ['ins_3', 'Wells Fargo'],
+    ['ins_4', 'Citi'],
+    ['ins_5', 'Capital One']
+  ]);
+
+  async createLinkToken(userId: string): Promise<LinkTokenCreateResponse> {
+    const linkToken = `link-token-${userId}-${Date.now()}`;
+    const expiration = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    this.linkTokens.set(linkToken, { userId, expiration });
+    console.log(`[Plaid Mock] Created link token for user ${userId}`);
+    return {
+      link_token: linkToken,
+      expiration: expiration.toISOString(),
+      request_id: `req-${Date.now()}`
+    };
+  }
+
+  async exchangePublicToken(publicToken: string): Promise<PublicTokenExchangeResponse> {
+    const tokenData = this.publicTokens.get(publicToken);
+    if (!tokenData) {
+      throw new Error('INVALID_PUBLIC_TOKEN: Public token not found or expired');
+    }
+    console.log(`[Plaid Mock] Exchanged public token for access token`);
+    this.publicTokens.delete(publicToken);
+    return {
+      access_token: tokenData.accessToken,
+      item_id: tokenData.itemId,
+      request_id: `req-${Date.now()}`
+    };
+  }
+
+  async getInstitutionById(institutionId: string): Promise<InstitutionInfo> {
+    const name = this.institutions.get(institutionId) || 'Unknown Bank';
+    return {
+      institution_id: institutionId,
+      name
+    };
+  }
 
   async revokeAllConnections(userId: string): Promise<number> {
     const userConnections = this.connections.get(userId) || [];
@@ -158,6 +221,18 @@ export class MockPlaidProvider implements IPlaidProvider {
     this.syncFailures.clear();
     this.mockTransactions.clear();
     this.transientErrors.clear();
+    this.linkTokens.clear();
+    this.publicTokens.clear();
+  }
+
+  // Test helper for simulating Plaid Link callback
+  setMockPublicToken(publicToken: string, accessToken: string, itemId: string, institutionId: string): void {
+    this.publicTokens.set(publicToken, { accessToken, itemId, institutionId });
+  }
+
+  // Test helper for adding custom institutions
+  addInstitution(institutionId: string, name: string): void {
+    this.institutions.set(institutionId, name);
   }
 
   // Transaction test helpers

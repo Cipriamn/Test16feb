@@ -6,6 +6,248 @@ import { createConnection } from '../../domain/entities/Connection';
 import { createSubscription } from '../../domain/entities/Subscription';
 
 describe('Connection Routes', () => {
+  describe('POST /api/v1/connections/plaid/link-token', () => {
+    let app: ReturnType<typeof createApp>['app'];
+    let repos: ReturnType<typeof createApp>['repositories'];
+    let providers: ReturnType<typeof createApp>['providers'];
+
+    beforeEach(() => {
+      const appSetup = createApp();
+      app = appSetup.app;
+      repos = appSetup.repositories;
+      providers = appSetup.providers;
+    });
+
+    afterEach(() => {
+      repos.userRepository.clear();
+      repos.sessionRepository.clear();
+      repos.connectionRepository.clear();
+      repos.subscriptionRepository.clear();
+      repos.securityEventRepository.clear();
+      providers.plaidProvider.clear();
+      providers.alertProvider.clear();
+      providers.domainEventEmitter.clear();
+    });
+
+    async function createTestUserAndToken(
+      overrides: Partial<Parameters<typeof createUser>[0]> = {}
+    ): Promise<{ user: ReturnType<typeof createUser>; accessToken: string }> {
+      const user = createUser({
+        id: 'test-user-id',
+        email: 'test@example.com',
+        passwordHash: 'hashed',
+        name: 'Test User',
+        ...overrides
+      });
+      await repos.userRepository.save(user);
+
+      const tokens = providers.tokenProvider.generateTokenPair(
+        user.id,
+        user.email,
+        'session-id'
+      );
+
+      const session = createAuthSession({
+        id: 'session-id',
+        userId: user.id,
+        refreshToken: tokens.refreshToken,
+        deviceInfo: 'test-agent',
+        ipAddress: '127.0.0.1',
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+      await repos.sessionRepository.save(session);
+
+      return { user, accessToken: tokens.accessToken };
+    }
+
+    it('should return 401 without auth token', async () => {
+      const response = await request(app)
+        .post('/api/v1/connections/plaid/link-token')
+        .expect(401);
+
+      expect(response.body.error).toBe('Authorization header required');
+    });
+
+    it('should create link token for authenticated user', async () => {
+      const { accessToken } = await createTestUserAndToken();
+
+      const response = await request(app)
+        .post('/api/v1/connections/plaid/link-token')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(response.body.link_token).toBeDefined();
+      expect(response.body.expiration).toBeDefined();
+    });
+  });
+
+  describe('POST /api/v1/connections/plaid/exchange', () => {
+    let app: ReturnType<typeof createApp>['app'];
+    let repos: ReturnType<typeof createApp>['repositories'];
+    let providers: ReturnType<typeof createApp>['providers'];
+
+    beforeEach(() => {
+      const appSetup = createApp();
+      app = appSetup.app;
+      repos = appSetup.repositories;
+      providers = appSetup.providers;
+    });
+
+    afterEach(() => {
+      repos.userRepository.clear();
+      repos.sessionRepository.clear();
+      repos.connectionRepository.clear();
+      repos.subscriptionRepository.clear();
+      repos.securityEventRepository.clear();
+      providers.plaidProvider.clear();
+      providers.alertProvider.clear();
+      providers.domainEventEmitter.clear();
+    });
+
+    async function createTestUserAndToken(
+      overrides: Partial<Parameters<typeof createUser>[0]> = {}
+    ): Promise<{ user: ReturnType<typeof createUser>; accessToken: string }> {
+      const user = createUser({
+        id: 'test-user-id',
+        email: 'test@example.com',
+        passwordHash: 'hashed',
+        name: 'Test User',
+        ...overrides
+      });
+      await repos.userRepository.save(user);
+
+      const tokens = providers.tokenProvider.generateTokenPair(
+        user.id,
+        user.email,
+        'session-id'
+      );
+
+      const session = createAuthSession({
+        id: 'session-id',
+        userId: user.id,
+        refreshToken: tokens.refreshToken,
+        deviceInfo: 'test-agent',
+        ipAddress: '127.0.0.1',
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+      await repos.sessionRepository.save(session);
+
+      return { user, accessToken: tokens.accessToken };
+    }
+
+    it('should return 401 without auth token', async () => {
+      const response = await request(app)
+        .post('/api/v1/connections/plaid/exchange')
+        .send({ public_token: 'test', institution_id: 'ins_1' })
+        .expect(401);
+
+      expect(response.body.error).toBe('Authorization header required');
+    });
+
+    it('should return 400 without required fields', async () => {
+      const { accessToken } = await createTestUserAndToken();
+
+      const response = await request(app)
+        .post('/api/v1/connections/plaid/exchange')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({})
+        .expect(400);
+
+      expect(response.body.error).toBe('Missing required fields');
+    });
+
+    it('should create connection from public token', async () => {
+      const { accessToken, user } = await createTestUserAndToken();
+
+      // Setup mock public token
+      providers.plaidProvider.setMockPublicToken(
+        'public-token-123',
+        'access-token-abc',
+        'item-xyz',
+        'ins_1'
+      );
+
+      const response = await request(app)
+        .post('/api/v1/connections/plaid/exchange')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          public_token: 'public-token-123',
+          institution_id: 'ins_1'
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.connection).toBeDefined();
+      expect(response.body.connection.institutionName).toBe('Chase');
+
+      // Verify connection was saved
+      const connections = await repos.connectionRepository.findByUserId(user.id);
+      expect(connections).toHaveLength(1);
+    });
+
+    it('should emit ConnectionEstablished event', async () => {
+      const { accessToken } = await createTestUserAndToken();
+
+      providers.plaidProvider.setMockPublicToken(
+        'public-token-123',
+        'access-token-abc',
+        'item-xyz',
+        'ins_1'
+      );
+
+      await request(app)
+        .post('/api/v1/connections/plaid/exchange')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          public_token: 'public-token-123',
+          institution_id: 'ins_1'
+        })
+        .expect(201);
+
+      const events = providers.domainEventEmitter.getConnectionEstablishedEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0].data.institutionId).toBe('ins_1');
+    });
+
+    it('should log connection_added security event', async () => {
+      const { accessToken, user } = await createTestUserAndToken();
+
+      providers.plaidProvider.setMockPublicToken(
+        'public-token-123',
+        'access-token-abc',
+        'item-xyz',
+        'ins_1'
+      );
+
+      await request(app)
+        .post('/api/v1/connections/plaid/exchange')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          public_token: 'public-token-123',
+          institution_id: 'ins_1'
+        })
+        .expect(201);
+
+      const events = await repos.securityEventRepository.findByUserId(user.id);
+      const connectionAddedEvent = events.find(e => e.eventType === 'connection_added');
+      expect(connectionAddedEvent).toBeDefined();
+    });
+
+    it('should return 400 for invalid public token', async () => {
+      const { accessToken } = await createTestUserAndToken();
+
+      const response = await request(app)
+        .post('/api/v1/connections/plaid/exchange')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          public_token: 'invalid-token',
+          institution_id: 'ins_1'
+        })
+        .expect(400);
+
+      expect(response.body.error).toBe('Invalid public token');
+    });
+  });
   let app: ReturnType<typeof createApp>['app'];
   let repos: ReturnType<typeof createApp>['repositories'];
   let providers: ReturnType<typeof createApp>['providers'];

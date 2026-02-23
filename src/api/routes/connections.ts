@@ -10,6 +10,81 @@ export function createConnectionRoutes(
   const router = Router();
   const authMiddleware = createAuthMiddleware(tokenProvider);
 
+  // POST /api/v1/connections/plaid/link-token - Create Plaid Link token
+  router.post(
+    '/plaid/link-token',
+    authMiddleware as (req: Request, res: Response, next: NextFunction) => void,
+    async (req: Request, res: Response) => {
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user?.sub;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const result = await connectionService.createLinkToken(userId);
+
+      if (!result.success) {
+        return res.status(500).json({ error: result.error });
+      }
+
+      return res.json({
+        link_token: result.linkToken,
+        expiration: result.expiration
+      });
+    }
+  );
+
+  // POST /api/v1/connections/plaid/exchange - Exchange public token for access token
+  router.post(
+    '/plaid/exchange',
+    authMiddleware as (req: Request, res: Response, next: NextFunction) => void,
+    async (req: Request, res: Response) => {
+      const authReq = req as AuthenticatedRequest;
+      const userId = authReq.user?.sub;
+      const { public_token, institution_id } = req.body as {
+        public_token?: string;
+        institution_id?: string;
+      };
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      if (!public_token || !institution_id) {
+        return res.status(400).json({
+          error: 'Missing required fields',
+          required: ['public_token', 'institution_id']
+        });
+      }
+
+      const userAgent = req.headers['user-agent'];
+      const deviceInfo = {
+        ip: String(req.ip || 'unknown'),
+        userAgent: Array.isArray(userAgent) ? userAgent[0] : (userAgent || 'unknown')
+      };
+
+      const result = await connectionService.exchangePublicToken(
+        userId,
+        public_token,
+        institution_id,
+        deviceInfo
+      );
+
+      if (!result.success) {
+        if (result.error?.includes('INVALID_PUBLIC_TOKEN')) {
+          return res.status(400).json({ error: 'Invalid public token' });
+        }
+        return res.status(500).json({ error: result.error });
+      }
+
+      return res.status(201).json({
+        success: true,
+        connection: result.connection
+      });
+    }
+  );
+
   // GET /api/v1/connections - List all connections for user
   router.get(
     '/',
