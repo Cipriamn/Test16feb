@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">36.84% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>19/19</span>
+                <span class='fraction'>7/19</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>4/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">36.84% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>19/19</span>
+                <span class='fraction'>7/19</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -124,45 +124,45 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">107x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">66x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export interface IEmailProvider {
@@ -183,28 +183,28 @@ export class MockEmailProvider implements IEmailProvider {
     return true;
   }
 &nbsp;
-  async sendPasswordChangedEmail(email: string): Promise&lt;boolean&gt; {
-    console.log(`[Email Mock] Sending password changed notification to ${email}`);
-    this.sentEmails.push({ to: email, type: 'password_changed', data: {} });
-    return true;
+<span class="fstat-no" title="function not covered" >  async </span>sendPasswordChangedEmail(email: string): Promise&lt;boolean&gt; {
+<span class="cstat-no" title="statement not covered" >    console.log(`[Email Mock] Sending password changed notification to ${email}`);</span>
+<span class="cstat-no" title="statement not covered" >    this.sentEmails.push({ to: email, type: 'password_changed', data: {} });</span>
+<span class="cstat-no" title="statement not covered" >    return true;</span>
   }
 &nbsp;
-  async sendEmailVerificationEmail(email: string, verificationToken: string): Promise&lt;boolean&gt; {
-    console.log(`[Email Mock] Sending email verification to ${email} with token ${verificationToken}`);
-    this.sentEmails.push({ to: email, type: 'email_verification', data: { verificationToken } });
-    return true;
+<span class="fstat-no" title="function not covered" >  async </span>sendEmailVerificationEmail(email: string, verificationToken: string): Promise&lt;boolean&gt; {
+<span class="cstat-no" title="statement not covered" >    console.log(`[Email Mock] Sending email verification to ${email} with token ${verificationToken}`);</span>
+<span class="cstat-no" title="statement not covered" >    this.sentEmails.push({ to: email, type: 'email_verification', data: { verificationToken } });</span>
+<span class="cstat-no" title="statement not covered" >    return true;</span>
   }
 &nbsp;
-  async sendAccountDeletionEmail(email: string, cancellationLink: string): Promise&lt;boolean&gt; {
-    console.log(`[Email Mock] Sending account deletion confirmation to ${email}`);
-    this.sentEmails.push({ to: email, type: 'account_deletion', data: { cancellationLink } });
-    return true;
+<span class="fstat-no" title="function not covered" >  async </span>sendAccountDeletionEmail(email: string, cancellationLink: string): Promise&lt;boolean&gt; {
+<span class="cstat-no" title="statement not covered" >    console.log(`[Email Mock] Sending account deletion confirmation to ${email}`);</span>
+<span class="cstat-no" title="statement not covered" >    this.sentEmails.push({ to: email, type: 'account_deletion', data: { cancellationLink } });</span>
+<span class="cstat-no" title="statement not covered" >    return true;</span>
   }
 &nbsp;
-  async sendAccountRestoredEmail(email: string): Promise&lt;boolean&gt; {
-    console.log(`[Email Mock] Sending account restored notification to ${email}`);
-    this.sentEmails.push({ to: email, type: 'account_restored', data: {} });
-    return true;
+<span class="fstat-no" title="function not covered" >  async </span>sendAccountRestoredEmail(email: string): Promise&lt;boolean&gt; {
+<span class="cstat-no" title="statement not covered" >    console.log(`[Email Mock] Sending account restored notification to ${email}`);</span>
+<span class="cstat-no" title="statement not covered" >    this.sentEmails.push({ to: email, type: 'account_restored', data: {} });</span>
+<span class="cstat-no" title="statement not covered" >    return true;</span>
   }
 &nbsp;
   // Test helpers
@@ -223,7 +223,7 @@ export class MockEmailProvider implements IEmailProvider {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-02-23T15:22:46.878Z
+                at 2026-02-23T15:29:34.716Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

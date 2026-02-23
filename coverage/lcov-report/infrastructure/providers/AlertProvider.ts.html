@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.88% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/9</span>
+                <span class='fraction'>3/9</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">83.33% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/6</span>
+                <span class='fraction'>2/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.5% </span>
+                <span class="strong">37.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>7/8</span>
+                <span class='fraction'>3/8</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -121,19 +121,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">78x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -142,11 +142,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export interface Alert {
@@ -166,8 +166,8 @@ export interface IAlertProvider {
 export class MockAlertProvider implements IAlertProvider {
   private alerts: Alert[] = [];
 &nbsp;
-  async sendSyncFailureAlert(userId: string, connectionId: string, error: string): Promise&lt;void&gt; {
-    const alert: Alert = {
+<span class="fstat-no" title="function not covered" >  async </span>sendSyncFailureAlert(userId: string, connectionId: string, error: string): Promise&lt;void&gt; {
+    const alert: Alert = <span class="cstat-no" title="statement not covered" >{</span>
       type: 'sync_failure',
       userId,
       connectionId,
@@ -175,8 +175,8 @@ export class MockAlertProvider implements IAlertProvider {
       metadata: { connectionId, error },
       createdAt: new Date()
     };
-    this.alerts.push(alert);
-    console.log(`[Alert Mock] Sync failure alert for user ${userId}, connection ${connectionId}: ${error}`);
+<span class="cstat-no" title="statement not covered" >    this.alerts.push(alert);</span>
+<span class="cstat-no" title="statement not covered" >    console.log(`[Alert Mock] Sync failure alert for user ${userId}, connection ${connectionId}: ${error}`);</span>
   }
 &nbsp;
   // Test helpers
@@ -184,8 +184,8 @@ export class MockAlertProvider implements IAlertProvider {
 <span class="cstat-no" title="statement not covered" >    return [...this.alerts];</span>
   }
 &nbsp;
-  getAlertsForUser(userId: string): Alert[] {
-    return this.alerts.filter(a =&gt; a.userId === userId);
+<span class="fstat-no" title="function not covered" >  getAlertsForUser(</span>userId: string): Alert[] {
+<span class="cstat-no" title="statement not covered" >    return this.alerts.filter(<span class="fstat-no" title="function not covered" >a </span>=&gt; <span class="cstat-no" title="statement not covered" >a.userId === userId)</span>;</span>
   }
 &nbsp;
   clear(): void {
@@ -199,7 +199,7 @@ export class MockAlertProvider implements IAlertProvider {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-02-23T15:22:46.857Z
+                at 2026-02-23T15:29:34.698Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
