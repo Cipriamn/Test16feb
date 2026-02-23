@@ -8,6 +8,7 @@ export type SecurityEventType =
   | 'two_factor_enabled'
   | 'two_factor_disabled'
   | 'session_revoked'
+  | 'connection_added'
   | 'connection_removed';
 
 export interface SecurityEvent {

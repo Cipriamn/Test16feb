@@ -3,6 +3,7 @@ import { loadConfig } from './config';
 import { createAuthRouter } from './api/routes/auth';
 import { createProfileRouter } from './api/routes/profile';
 import { createConnectionRoutes } from './api/routes/connections';
+import { createWebhookRoutes } from './api/routes/webhooks';
 import { AuthService } from './application/services/AuthService';
 import { ProfileService } from './application/services/ProfileService';
 import { ConnectionService } from './application/services/ConnectionService';
@@ -75,9 +76,11 @@ export function createApp() {
   const authRouter = createAuthRouter(authService, tokenProvider);
   const profileRouter = createProfileRouter(profileService, tokenProvider);
   const connectionRouter = createConnectionRoutes(connectionService, tokenProvider);
+  const webhookRouter = createWebhookRoutes(connectionService);
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/users', profileRouter);
   app.use('/api/v1/connections', connectionRouter);
+  app.use('/api/v1/webhooks', webhookRouter);
 
   // Health check
   app.get('/health', (req, res) => {
