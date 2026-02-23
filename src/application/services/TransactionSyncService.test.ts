@@ -489,4 +489,204 @@ describe('TransactionRepository', () => {
     const latestDate = await repository.getLatestTransactionDate('conn-1');
     expect(latestDate).toEqual(newDate);
   });
+
+  it('should throw error on duplicate plaid transaction ID when saving', async () => {
+    const { createTransaction } = await import('../../domain/entities/Transaction');
+
+    const txn1 = createTransaction({
+      id: 'txn-1',
+      userId: 'user-1',
+      connectionId: 'conn-1',
+      plaidTransactionId: 'plaid-dup',
+      accountId: 'acc-1',
+      name: 'First',
+      amount: 50,
+      currencyCode: 'USD',
+      date: new Date()
+    });
+
+    const txn2 = createTransaction({
+      id: 'txn-2',
+      userId: 'user-1',
+      connectionId: 'conn-1',
+      plaidTransactionId: 'plaid-dup', // Same plaid ID, different internal ID
+      accountId: 'acc-1',
+      name: 'Duplicate',
+      amount: 75,
+      currencyCode: 'USD',
+      date: new Date()
+    });
+
+    await repository.save(txn1);
+    await expect(repository.save(txn2)).rejects.toThrow('Duplicate transaction');
+  });
+
+  it('should find transactions by userId with pagination', async () => {
+    const { createTransaction } = await import('../../domain/entities/Transaction');
+
+    for (let i = 0; i < 10; i++) {
+      await repository.save(createTransaction({
+        id: `txn-${i}`,
+        userId: 'user-1',
+        connectionId: 'conn-1',
+        plaidTransactionId: `plaid-${i}`,
+        accountId: 'acc-1',
+        name: `Transaction ${i}`,
+        amount: i * 10,
+        currencyCode: 'USD',
+        date: new Date(2024, 0, i + 1)
+      }));
+    }
+
+    // With limit only
+    const limited = await repository.findByUserId('user-1', 3);
+    expect(limited.length).toBe(3);
+
+    // With limit and offset
+    const paged = await repository.findByUserId('user-1', 3, 2);
+    expect(paged.length).toBe(3);
+
+    // Without pagination
+    const all = await repository.findByUserId('user-1');
+    expect(all.length).toBe(10);
+  });
+
+  it('should find by multiple plaid transaction IDs', async () => {
+    const { createTransaction } = await import('../../domain/entities/Transaction');
+
+    await repository.save(createTransaction({
+      id: 'txn-1',
+      userId: 'user-1',
+      connectionId: 'conn-1',
+      plaidTransactionId: 'plaid-1',
+      accountId: 'acc-1',
+      name: 'Txn 1',
+      amount: 50,
+      currencyCode: 'USD',
+      date: new Date()
+    }));
+
+    await repository.save(createTransaction({
+      id: 'txn-2',
+      userId: 'user-1',
+      connectionId: 'conn-1',
+      plaidTransactionId: 'plaid-2',
+      accountId: 'acc-1',
+      name: 'Txn 2',
+      amount: 75,
+      currencyCode: 'USD',
+      date: new Date()
+    }));
+
+    const found = await repository.findByPlaidTransactionIds(['plaid-1', 'plaid-2', 'plaid-3']);
+    expect(found.length).toBe(2);
+  });
+
+  it('should return null for non-existent latest transaction date', async () => {
+    const latestDate = await repository.getLatestTransactionDate('non-existent-conn');
+    expect(latestDate).toBeNull();
+  });
+
+  it('should count transactions by userId', async () => {
+    const { createTransaction } = await import('../../domain/entities/Transaction');
+
+    for (let i = 0; i < 5; i++) {
+      await repository.save(createTransaction({
+        id: `txn-${i}`,
+        userId: 'user-1',
+        connectionId: 'conn-1',
+        plaidTransactionId: `plaid-${i}`,
+        accountId: 'acc-1',
+        name: `Txn ${i}`,
+        amount: i * 10,
+        currencyCode: 'USD',
+        date: new Date()
+      }));
+    }
+
+    const count = await repository.countByUserId('user-1');
+    expect(count).toBe(5);
+  });
+
+  it('should delete transactions by userId', async () => {
+    const { createTransaction } = await import('../../domain/entities/Transaction');
+
+    for (let i = 0; i < 3; i++) {
+      await repository.save(createTransaction({
+        id: `txn-${i}`,
+        userId: 'user-1',
+        connectionId: 'conn-1',
+        plaidTransactionId: `plaid-${i}`,
+        accountId: 'acc-1',
+        name: `Txn ${i}`,
+        amount: i * 10,
+        currencyCode: 'USD',
+        date: new Date()
+      }));
+    }
+
+    const deleted = await repository.deleteByUserId('user-1');
+    expect(deleted).toBe(3);
+
+    const remaining = await repository.findByUserId('user-1');
+    expect(remaining.length).toBe(0);
+  });
+
+  it('should delete transactions by connectionId', async () => {
+    const { createTransaction } = await import('../../domain/entities/Transaction');
+
+    for (let i = 0; i < 4; i++) {
+      await repository.save(createTransaction({
+        id: `txn-${i}`,
+        userId: 'user-1',
+        connectionId: 'conn-1',
+        plaidTransactionId: `plaid-${i}`,
+        accountId: 'acc-1',
+        name: `Txn ${i}`,
+        amount: i * 10,
+        currencyCode: 'USD',
+        date: new Date()
+      }));
+    }
+
+    const deleted = await repository.deleteByConnectionId('conn-1');
+    expect(deleted).toBe(4);
+
+    const remaining = await repository.findByConnectionId('conn-1');
+    expect(remaining.length).toBe(0);
+  });
+
+  it('should return null when finding non-existent plaid transaction', async () => {
+    const found = await repository.findByPlaidTransactionId('non-existent');
+    expect(found).toBeNull();
+  });
+
+  it('should return null when finding non-existent transaction by id', async () => {
+    const found = await repository.findById('non-existent');
+    expect(found).toBeNull();
+  });
+
+  it('should return empty array when no transactions match plaid IDs', async () => {
+    const found = await repository.findByPlaidTransactionIds(['non-1', 'non-2']);
+    expect(found).toEqual([]);
+  });
+
+  it('should handle getAll helper', async () => {
+    const { createTransaction } = await import('../../domain/entities/Transaction');
+
+    repository.addTransaction(createTransaction({
+      id: 'txn-1',
+      userId: 'user-1',
+      connectionId: 'conn-1',
+      plaidTransactionId: 'plaid-1',
+      accountId: 'acc-1',
+      name: 'Txn 1',
+      amount: 50,
+      currencyCode: 'USD',
+      date: new Date()
+    }));
+
+    const all = repository.getAll();
+    expect(all.length).toBe(1);
+  });
 });

@@ -10,7 +10,7 @@ AskTrim Backend Services - subscription tracking backend with JWT-based authenti
 - **Framework**: Express 5.x REST API
 - **Auth**: jsonwebtoken, bcryptjs, speakeasy (TOTP)
 - **External**: Plaid integration for financial connections and transaction sync
-- **Testing**: Jest + supertest (91.41% coverage, 244 tests)
+- **Testing**: Jest + supertest (95.09% coverage, 263 tests)
 - **Architecture**: Clean architecture - domain/application/infrastructure layers with domain events
 
 ## What This Branch Does
